@@ -58,17 +58,6 @@ templates = Jinja2Templates(directory="templates")
 #current_user = fastapi_users.current_user()
 
 
-
-def db_connect():
-    conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
-    cursor = conn.cursor()
-    return conn, cursor
-
-
-def close_db(conn, cursor):
-    cursor.close()
-    conn.close()
-
 @app.get("/profile/{user_id}")
 async def get_user(user_id: int, session: Session = Depends(get_session)):
     project = select(Profile).where(Profile.user_id == user_id)
