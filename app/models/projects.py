@@ -10,4 +10,3 @@ class ProjectBase(SQLModel):
 
 class Project(ProjectBase, table=True):
     skills: str
-    applications: List['Application'] = Relationship(back_populates='application.project_id')

@@ -15,5 +15,5 @@ class ProfileBase(SQLModel):
 
 
 class Profile(ProfileBase, table=True):
-    skills: List['Skill'] = Relationship(back_populates='skill.id')
+    #skills: List['Skill'] = Relationship(back_populates='skill.id')
     user_id: int = Field(primary_key=True)
