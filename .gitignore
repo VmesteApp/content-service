@@ -83,3 +83,4 @@ sonarqube/extensions
 sonarqube/data
 sonarqube/logs
 .terraform
+yoyo-local.ini
