@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class Send_Application(BaseModel):
-    project_id: int
+    pulse_id: int
     candidate_id: int
     message: str
 
