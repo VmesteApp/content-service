@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
-from app.api.jwt_decoder import current_user
+from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete
@@ -11,18 +10,18 @@ router = APIRouter()
 
 
 @router.post("/admin/tags")
-async def create_tag(session: Session = Depends(get_db), new_tag: Create_Tag = Depends()):
-    if current_user["role"] == "admin":
+async def create_tag(request: Request, new_tag: Create_Tag, session: Session = Depends(get_db)):
+    if request.state.role == "admin" or request.state.role == "super_admin":
         post_tag = insert(tag).values({"name": new_tag.name})
         session.execute(post_tag)
-        session.commit()   
+        session.commit()
     else:
         raise HTTPException(status_code=403, detail=" Invalid role type")
 
 
 @router.put("/admin/tags")
-async def update_tag(session: Session = Depends(get_db), up_tag: Update_Tag = Depends()):
-    if current_user["role"] == "admin":
+async def update_tag(request: Request, up_tag: Update_Tag, session: Session = Depends(get_db)):
+    if request.state.role == "admin":
         update_tag = update(tag)
         val = update_tag.values({"name": up_tag.name})
         cond = val.where(tag.c.id == up_tag.id)
@@ -33,8 +32,8 @@ async def update_tag(session: Session = Depends(get_db), up_tag: Update_Tag = De
 
 
 @router.delete("/admin/tags")
-async def delete_tag(session: Session = Depends(get_db), del_tag: Delete_Tag = Depends()):
-    if current_user["role"] == "admin":
+async def delete_tag(request: Request, del_tag: Delete_Tag, session: Session = Depends(get_db)):
+    if request.state.role == "admin":
         result = session.execute(delete(tag).where(del_tag.id == tag.c.id))
         session.commit()  
     else:

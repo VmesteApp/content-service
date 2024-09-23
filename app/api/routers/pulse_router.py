@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
-from app.api.jwt_decoder import current_user
+from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select
@@ -11,8 +10,8 @@ router = APIRouter()
 
 
 @router.post("/pulse")
-async def create_pulse(session: Session = Depends(get_db), new_pulse: Create_Pulse = Depends()):
-    if current_user["role"] == "user":
+async def create_pulse(request: Request, new_pulse: Create_Pulse , session: Session = Depends(get_db)):
+    if request.state.role == "user":
         post_pulse = insert(pulse).values({"category" : new_pulse.category,
                                         "name": new_pulse.name,
                                         "description": new_pulse.description,
@@ -32,8 +31,8 @@ async def create_pulse(session: Session = Depends(get_db), new_pulse: Create_Pul
 
     
 @router.put("/pulse")
-async def update_pulse(session: Session = Depends(get_db), update_pulse: Update_Pulse = Depends()):
-    if current_user["role"] == "user":
+async def update_pulse(request: Request, update_pulse: Update_Pulse, session: Session = Depends(get_db)):
+    if request.state.role == "user":
         new_tagss = []
         pulse_up = update(pulse)
         val = pulse_up.values({"category" : update_pulse.category,
@@ -53,7 +52,7 @@ async def update_pulse(session: Session = Depends(get_db), update_pulse: Update_
                 session.execute(new_pr_tag)
         for j in tags_id_old:
             if j not in new_tagss:
-                result = session.execute(delete(pulse_tags).where(pulse_tags.c.tag_id == j))
+                result = session.execute(delete(pulse_tags).where((pulse_tags.c.tag_id == j)&(update_pulse.id == pulse_tags.c.pulse_id)))
         session.commit()  
     else:
         raise HTTPException(status_code=403, detail=" Invalid role type")
@@ -62,9 +61,10 @@ async def update_pulse(session: Session = Depends(get_db), update_pulse: Update_
     
 
 @router.delete("/pulse")
-def delte_pulse(session: Session = Depends(get_db), delete_pulse: Delete_Pulse = Depends()):
-    if current_user["role"] == "user":
+def delte_pulse(request: Request, delete_pulse: Delete_Pulse, session: Session = Depends(get_db)):
+    if request.state.role == "user":
         result = session.execute(delete(pulse).where(delete_pulse.id == pulse.c.id))
+        session.execute(delete(pulse_tags).where(delete_pulse.id == pulse_tags.c.pulse_id))
         session.commit()  
     else:
         raise HTTPException(status_code=403, detail=" Invalid role type")

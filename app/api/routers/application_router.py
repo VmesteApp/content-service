@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
-from app.api.jwt_decoder import current_user
+from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, select
@@ -11,8 +10,8 @@ router = APIRouter()
 
 
 @router.post("/application")
-async def create_application(session: Session = Depends(get_db), new_application: Send_Application = Depends()):
-    if current_user["role"] == "user":
+async def create_application(request: Request, new_application: Send_Application,  session: Session = Depends(get_db)):
+    if request.state.role == "user":
         post_application = insert(application).values(**new_application.dict())
         session.execute(post_application)
         session.commit()  
@@ -21,8 +20,8 @@ async def create_application(session: Session = Depends(get_db), new_application
 
     
 @router.post("/application/verdict")
-async def update_appli(session: Session = Depends(get_db), verdict: Verdict = Depends()):
-    if current_user["role"] == "user":
+async def update_appli(request: Request, verdict: Verdict, session: Session = Depends(get_db)):
+    if request.state.role == "user":
         appli = update(application)
         val = appli.values({"status": verdict.status})
         cond = val.where(application.c.id == verdict.id)
@@ -35,9 +34,9 @@ async def update_appli(session: Session = Depends(get_db), verdict: Verdict = De
     
 
 @router.get("/application/{pulse_id}")
-def find_application(pulse_id_new: int, session: Session = Depends(get_db)):
-    if current_user["role"] == "user":
-        result = session.execute(select(application).where(application.c.pulse_id == pulse_id_new))
+def find_application(pulse_id: int, request: Request, session: Session = Depends(get_db)):
+    if request.state.role == "user":
+        result = session.execute(select(application).where(application.c.pulse_id == pulse_id))
         return {
                 "status": "success",
                 "data": result.scalars().all(),
