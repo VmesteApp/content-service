@@ -1,0 +1,33 @@
+networks:
+  dev:
+
+version: '3.9'
+services:
+  app:
+    build:
+      context: ./content-service
+    image: content-service-vmeste
+    container_name: content-service-vmeste
+    ports:
+      - "80:80"
+    depends_on:
+      - postgres
+    networks:
+      - dev
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: 'user'
+      POSTGRES_PASSWORD: 'pass'
+      POSTGRES_DB: 'postgres'
+    ports:
+      - 5432:5432
+    networks:
+      - dev
+
+volumes:
+  pg-data:
