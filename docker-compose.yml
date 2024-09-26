@@ -5,7 +5,7 @@ version: '3.9'
 services:
   app:
     build:
-      context: ./content-service
+      context: .
     image: content-service-vmeste
     container_name: content-service-vmeste
     ports:
