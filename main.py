@@ -11,4 +11,3 @@ app.include_router(application_router.router)
 app.include_router(pulse_router.router)
 app.include_router(tag_router.router)
 app.debug = True
-
