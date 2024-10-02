@@ -8,8 +8,6 @@ services:
       context: .
     image: content-service-vmeste
     container_name: content-service-vmeste
-    volumes:
-      - ./migrations:/app/alembic/alembic.ini
     ports:
       - "8000:80"
       - "3000:443"
