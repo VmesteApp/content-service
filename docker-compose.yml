@@ -9,8 +9,7 @@ services:
     image: content-service-vmeste
     container_name: content-service-vmeste
     ports:
-      - "8000:80"
-      - "3000:443"
+      - "8000:8000"
     depends_on:
       - postgres
     networks:
