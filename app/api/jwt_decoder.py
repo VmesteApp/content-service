@@ -11,9 +11,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         token = request.headers.get("authorization")
-        token = token.split(" ")[1]
-        if not token or not self.validate_token(token):
+        if not token or not self.validate_token(token.split(" ")[1]):
             raise HTTPException(status_code=401, detail="Unauthorized")
+        token = token.split(" ")[1]
         request.state.role = self.decode_token(token)["role"]
         response = await call_next(request)
         return response
