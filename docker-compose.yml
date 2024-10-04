@@ -1,19 +1,20 @@
 networks:
   dev:
 
-version: '3.9'
 services:
-  app:
+  content:
     build:
       context: .
     image: content-service-vmeste
     container_name: content-service-vmeste
     ports:
-      - "80:80"
+      - "8000:8000"
     depends_on:
       - postgres
     networks:
       - dev
+    env_file:
+      - .env
 
   postgres:
     container_name: postgres

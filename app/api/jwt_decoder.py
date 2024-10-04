@@ -20,7 +20,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             request.state.role = self.decode_token(token)["role"]
         else:
             raise HTTPException(status_code=401, detail="Unauthorized")
-
         response = await call_next(request)
         return response
 
