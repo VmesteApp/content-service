@@ -9,7 +9,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Проверка на /docs или /redoc
-        if request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
+        if request.url.path.startswith(("/content/docs", "/content/redoc", "/content/openapi.json")):
             return await call_next(request)
 
         token = request.headers.get("authorization")
