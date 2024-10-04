@@ -4,17 +4,22 @@ from fastapi.security import OAuth2PasswordBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Annotated
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # Проверка на /docs или /redoc
+        if request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
+            return await call_next(request)
+
         token = request.headers.get("authorization")
-        if not token or not self.validate_token(token.split(" ")[1]):
+        if token:
+            token = token.split(" ")[1]
+            if not self.validate_token(token):
+                raise HTTPException(status_code=401, detail="Unauthorized")
+            request.state.role = self.decode_token(token)["role"]
+        else:
             raise HTTPException(status_code=401, detail="Unauthorized")
-        token = token.split(" ")[1]
-        request.state.role = self.decode_token(token)["role"]
         response = await call_next(request)
         return response
 
@@ -30,4 +35,3 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     def decode_token(self, token: str) -> bool:
         payload = jwt.decode(token, "test", algorithms=["HS256"])
         return payload
-    
