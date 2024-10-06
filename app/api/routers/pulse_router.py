@@ -6,7 +6,7 @@ from app.models.models import pulse, pulse_tags, tag
 from app.schemas.pulse_schemas import Create_Pulse, Update_Pulse, Delete_Pulse
 
 
-router = APIRouter(prefix="/content")
+router = APIRouter()
 
 
 @router.post("/pulse")
