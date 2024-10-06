@@ -6,7 +6,7 @@ from app.models.models import tag
 from app.schemas.tag_schemas import Create_Tag, Update_Tag, Delete_Tag
 
 
-router = APIRouter(prefix="/content")
+router = APIRouter()
 
 
 @router.post("/admin/tags")
