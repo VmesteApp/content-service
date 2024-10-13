@@ -1,16 +1,14 @@
-from typing import Optional
 from pydantic import BaseModel
-from datetime import datetime
 
 
-class Create_Tag(BaseModel):
+class CreateTag(BaseModel):
     name: str
 
 
-class Update_Tag(BaseModel):
+class UpdateTag(BaseModel):
     id: int
     name: str
 
 
-class Delete_Tag(BaseModel):
+class DeleteTag(BaseModel):
     id: int

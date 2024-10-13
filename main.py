@@ -7,14 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(openapi_prefix="/content")
 
-
 app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins = ["*"],
-  allow_methods = ["*"],
-  allow_headers = ["*"]
-)
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+    )
 
 
 app.include_router(application_router.router)

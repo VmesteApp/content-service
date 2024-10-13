@@ -1,10 +1,8 @@
-from sqlalchemy import MetaData, Table, Integer, String, \
-    Column, DateTime, ForeignKey, Numeric, ARRAY
-
+from sqlalchemy import MetaData, Table, Integer, String, Column
 from sqlalchemy.orm import declarative_base
 
-metadata = MetaData()
 
+metadata = MetaData()
 Base = declarative_base()
 
 application = Table(
@@ -17,7 +15,6 @@ application = Table(
     Column("message", String),
     Column("status", String, default="PENDING"),
 )
-
 
 pulse = Table(
     "pulse",
@@ -44,4 +41,3 @@ pulse_tags = Table(
     Column("pulse_id", Integer),
     Column("tag_id", Integer)
 )
-
