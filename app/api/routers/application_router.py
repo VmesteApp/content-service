@@ -6,7 +6,7 @@ from app.models.models import application
 from app.schemas.applications_schemas import Send_Application, Verdict
 
 
-router = APIRouter(prefix="/content")
+router = APIRouter()
 
 
 @router.post("content/application")

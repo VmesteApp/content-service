@@ -4,7 +4,7 @@ from app.api.routers import tag_router, pulse_router, application_router
 from app.api.jwt_decoder import AuthenticationMiddleware
 
 
-app = FastAPI()
+app = FastAPI(openapi_prefix="/content")
 
 
 app.add_middleware(AuthenticationMiddleware)
