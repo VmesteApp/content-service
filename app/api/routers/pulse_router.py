@@ -25,9 +25,8 @@ async def create_pulse(request: Request, new_pulse: CreatePulse, session: Sessio
             row_id = row.id
         new_pulse_tags = list(new_pulse.tags.split(","))
         for i in new_pulse_tags:
-            tag_id = session.execute(select(tag).where(tag.c.name == i)).scalar()
             new_pr_tag = insert(pulse_tags).values({"pulse_id":  row_id,
-                                                    "tag_id": tag_id})
+                                                    "tag_id": i})
             session.execute(new_pr_tag)
         session.commit()
     else:
