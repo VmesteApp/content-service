@@ -8,10 +8,14 @@ from app.schemas.pulse_schemas import CreatePulse, UpdatePulse, DeletePulse
 
 router = APIRouter()
 
+ALLOWED_CATEGORIES = ["project", "event"]
+
 
 @router.post("/pulse")
 async def create_pulse(request: Request, new_pulse: CreatePulse, session: Session = Depends(get_db)):
     if request.state.role == "user":
+        if new_pulse.category not in ALLOWED_CATEGORIES:
+            raise HTTPException(status_code=422, detail="Invalid category")
         post_pulse = insert(pulse).values({"category": new_pulse.category,
                                            "name": new_pulse.name,
                                            "description": new_pulse.description,
@@ -21,9 +25,8 @@ async def create_pulse(request: Request, new_pulse: CreatePulse, session: Sessio
             row_id = row.id
         new_pulse_tags = list(new_pulse.tags.split(","))
         for i in new_pulse_tags:
-            tag_id = session.execute(select(tag).where(tag.c.name == i)).scalar()
             new_pr_tag = insert(pulse_tags).values({"pulse_id":  row_id,
-                                                    "tag_id": tag_id})
+                                                    "tag_id": i})
             session.execute(new_pr_tag)
         session.commit()
     else:
@@ -33,6 +36,8 @@ async def create_pulse(request: Request, new_pulse: CreatePulse, session: Sessio
 @router.put("/pulse")
 async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db)):
     if request.state.role == "user":
+        if update_pulse.category not in ALLOWED_CATEGORIES:
+            raise HTTPException(status_code=422, detail="Invalid category")
         new_tagss = []
         pulse_up = update(pulse)
         val = pulse_up.values({"category": update_pulse.category,
