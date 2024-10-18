@@ -31,7 +31,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=401, content={"detail": "Invalid token"})
 
         except AttributeError:
-            return JSONResponse(status_code=403, content={"detail": "Unauthorized"})
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
 
         except Exception:
             return JSONResponse(status_code=500, content={"detail": "Others errors"})

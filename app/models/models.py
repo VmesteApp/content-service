@@ -1,4 +1,5 @@
-from sqlalchemy import MetaData, Table, Integer, String, Column
+# from uuid import UUID
+from sqlalchemy import MetaData, Table, Integer, String, Column, UUID
 from sqlalchemy.orm import declarative_base
 
 
@@ -40,4 +41,11 @@ pulse_tags = Table(
     Column("id", Integer, primary_key=True),
     Column("pulse_id", Integer),
     Column("tag_id", Integer)
+)
+
+images = Table(
+    "images",
+    metadata,
+    Column("image_id", UUID, primary_key=True),
+    Column("pulse_id", Integer)
 )
