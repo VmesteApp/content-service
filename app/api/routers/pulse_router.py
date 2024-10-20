@@ -79,7 +79,12 @@ def delte_pulse(request: Request, delete_pulse: DeletePulse, session: Session = 
 @router.get("/pulses")
 def all_pulse(session: Session = Depends(get_db)):
     pulses = session.query((pulse)).all()
-    return {"pulses": [list(pulse_1) for pulse_1 in pulses]}
+    return {"pulses": [{"id": i.id,
+                        "category" : i.category,
+                        "name": i.name,
+                        "description": i.description,
+                        "short_description": i.short_description
+                        } for i in pulses]}
 
 
 @router.get("/pulses/{pulse_id}")
@@ -87,6 +92,11 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
     result = session.query(pulse).where(pulse.c.id == pulse_id).all()
     return {
             "status": "success",
-            "data": [list(pulse_1) for pulse_1 in result],
+            "data": [{"id": i.id,
+                        "category" : i.category,
+                        "name": i.name,
+                        "description": i.description,
+                        "short_description": i.short_description
+                        } for i in result],
             "details": None
         }
