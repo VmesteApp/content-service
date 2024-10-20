@@ -43,4 +43,4 @@ async def delete_tag(request: Request, del_tag: DeleteTag, session: Session = De
 @router.get("/tags")
 def all_pulse(session: Session = Depends(get_db)):
     tags = session.query((tag)).all()
-    return {"tags": [list(i) for i in tags]}
+    return {"tags": [{"id": i.id, "name": i.name} for i in tags]}
