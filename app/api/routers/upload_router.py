@@ -1,5 +1,5 @@
 import os
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile, Request, HTTPException
 from sqlalchemy.orm import Session
@@ -26,7 +26,7 @@ def check_pulse_id(pulse_id, session):
     return False
 
 
-@router.get("/images/{pulse_id}")
+@router.get("/image/{pulse_id}")
 async def get_images(request: Request, pulse_id: int, session: Session = Depends(get_db)):
     if request.state.role != "user":
         raise HTTPException(status_code=403, detail="Invalid role type")
@@ -39,7 +39,7 @@ async def get_images(request: Request, pulse_id: int, session: Session = Depends
         raise HTTPException(status_code=500, detail="Send file error")
 
 
-@router.post("/image/{pulse_id}")   
+@router.post("pulse/{id}/image")
 async def upload_image(request: Request, pulse_id: int, file: UploadFile = File(...), session: Session = Depends(get_db)):
     if request.state.role == "user":
         if check_pulse_id(pulse_id, session):
@@ -69,10 +69,10 @@ async def upload_image(request: Request, pulse_id: int, file: UploadFile = File(
         raise HTTPException(status_code=403, detail="Invalid role type")
 
 
-@router.delete("/image")
-def delete_image(request: Request, delete_image_data: DeleteImage, session: Session = Depends(get_db)):
+@router.delete("/image/{uuid}")
+def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db)):
     if request.state.role == "user":
-        session.execute(delete(images).where(images.c.image_id == delete_image_data.image_id))
+        session.execute(delete(images).where(images.c.image_id == delete_image_uuid))
         session.commit()
     else:
         raise HTTPException(status_code=403, detail="Invalid role type")

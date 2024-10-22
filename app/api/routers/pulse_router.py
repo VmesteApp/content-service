@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select
-from app.models.models import pulse, pulse_tags, tag, pulse_members
+from app.models.models import pulse, pulse_tags, tag, pulse_members, images
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse, DeletePulse
 from app.api.role_checker import RoleChecker
 
@@ -79,32 +79,29 @@ def all_pulse(request: Request, session: Session = Depends(get_db)):
     for i in pulses_member:
         for j in session.query((pulse)).where(pulse.c.id == i[0]):
             member_in.append(j)                
-    pulses_founder = session.query((pulse)).where((pulse.c.founder_id==request.state.uid))
+    pulses_founder = session.query((pulse)).where((pulse.c.founder_id == request.state.uid))
     
     for i in pulses_founder:
-        member_in.append(i) 
+        member_in.append(i)
+    
     return {"pulses": [{"id": i.id,
                         "category" : i.category,
                         "name": i.name,
                         "founder_id": i.founder_id,
                         "description": i.description,
-                        "short_description": i.short_description
+                        "short_description": i.short_description,
                         } for i in member_in]}
 
 
 @router.get("/pulses/{pulse_id}")
 def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
-    result = session.query(pulse).where(pulse.c.id == pulse_id)
-    members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id)
-    list_of_members = []
-    for i in members:
-        list_of_members.append(i[0])
-    return {"pulse": [{"id": i.id,
-            "category": i.category,
-            "name": i.name,
-            "founder_id": i.founder_id,
-            "description": i.description,
-            "short_description": i.short_description,
-            "members":  list_of_members,
-            } for i in result]
+    result = session.query(pulse).where(pulse.c.id == pulse_id).first()
+    members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
+    return {"id": result.id,
+            "category": result.category,
+            "name": result.name,
+            "founder_id": result.founder_id,
+            "description": result.description,
+            "short_description": result.short_description,
+            "members":  members,
             }
