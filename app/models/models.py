@@ -22,6 +22,7 @@ pulse = Table(
     Column("id", Integer, primary_key=True),
     Column("category", String),
     Column("name", String),
+    Column("founder_id", Integer),
     Column("description", String),
     Column("short_description", String),
 )
@@ -47,7 +48,6 @@ tag = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("name", String),
-    Column("decription", String),
 )
 
 pulse_tags = Table(
@@ -55,5 +55,20 @@ pulse_tags = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("pulse_id", Integer),
-    Column("tag_id", Integer),
+    Column("tag_id", Integer)
+)
+
+pulse_members = Table(
+    "pulse_members",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("pulse_id", Integer),
+    Column("user_id", Integer)
+)
+
+images = Table(
+    "images",
+    metadata,
+    Column("image_id", UUID, primary_key=True),
+    Column("pulse_id", Integer)
 )
