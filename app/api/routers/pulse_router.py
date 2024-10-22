@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
-from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select
+
 from app.models.models import pulse, pulse_tags, tag
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse, DeletePulse
+from app.db.session import get_db
 
 
 router = APIRouter()
@@ -67,7 +68,7 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
 
 @router.delete("/pulse")
-def delte_pulse(request: Request, delete_pulse: DeletePulse, session: Session = Depends(get_db)):
+def delete_pulse(request: Request, delete_pulse: DeletePulse, session: Session = Depends(get_db)):
     if request.state.role == "user":
         result = session.execute(delete(pulse).where(delete_pulse.id == pulse.c.id))
         session.execute(delete(pulse_tags).where(delete_pulse.id == pulse_tags.c.pulse_id))
@@ -78,8 +79,8 @@ def delte_pulse(request: Request, delete_pulse: DeletePulse, session: Session = 
 
 @router.get("/pulses")
 def all_pulse(session: Session = Depends(get_db)):
-    pulses = session.query((pulse)).all()
-    return {"pulses": [list(pulse_1) for pulse_1 in pulses]}
+    pulses = session.query(pulse).all()
+    return {"pulses": [list(i) for i in pulses]}
 
 
 @router.get("/pulses/{pulse_id}")
@@ -87,6 +88,6 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
     result = session.query(pulse).where(pulse.c.id == pulse_id).all()
     return {
             "status": "success",
-            "data": [list(pulse_1) for pulse_1 in result],
+            "data": [list(i) for i in result],
             "details": None
         }
