@@ -84,3 +84,4 @@ sonarqube/data
 sonarqube/logs
 .terraform
 yoyo-local.ini
+upload_images/

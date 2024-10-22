@@ -108,4 +108,4 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
             "members":  list_of_members,
             } for i in result]
             }
-    
+   

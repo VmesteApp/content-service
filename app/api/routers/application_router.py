@@ -21,9 +21,6 @@ async def create_application(request: Request, new_application: SendApplication,
     session.commit()
 
 
-
-
-
 @router.put("/application/verdict")
 async def update_application(request: Request, verdict: Verdict, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
