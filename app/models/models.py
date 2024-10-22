@@ -1,5 +1,4 @@
-# from uuid import UUID
-from sqlalchemy import MetaData, Table, Integer, String, Column, UUID
+from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey
 from sqlalchemy.orm import declarative_base
 
 
@@ -26,6 +25,22 @@ pulse = Table(
     Column("founder_id", Integer),
     Column("description", String),
     Column("short_description", String),
+)
+
+images = Table(
+    "images",
+    metadata,
+    Column("image_id", UUID, primary_key=True),
+    Column("pulse_id", Integer, ForeignKey("pulse.id")),
+    Column("image_path", String),
+)
+
+files = Table(
+    "files",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("file_id", UUID),
+    Column("file_path", String),
 )
 
 tag = Table(
