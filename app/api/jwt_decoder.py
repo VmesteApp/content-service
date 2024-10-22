@@ -18,8 +18,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         token = request.headers.get("authorization")
 
         try:
-            token = token.split(" ")[1]
+            if "Bearer" in token:
+                token = token.split(" ")[1]
             request.state.role = self.decode_token(token)["role"]
+            request.state.uid = self.decode_token(token)["uid"]
             jwt.decode(token, "test", algorithms=["HS256"])
             response = await call_next(request)
             return response
