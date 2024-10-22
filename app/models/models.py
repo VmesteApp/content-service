@@ -1,14 +1,11 @@
 from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey
-from sqlalchemy.orm import declarative_base
 
 
 metadata = MetaData()
-Base = declarative_base()
 
 application = Table(
     "application",
     metadata,
-    Base.metadata,
     Column("id", Integer, primary_key=True),
     Column("pulse_id", Integer),
     Column("candidate_id", Integer),
@@ -64,11 +61,4 @@ pulse_members = Table(
     Column("id", Integer, primary_key=True),
     Column("pulse_id", Integer),
     Column("user_id", Integer)
-)
-
-images = Table(
-    "images",
-    metadata,
-    Column("image_id", UUID, primary_key=True),
-    Column("pulse_id", Integer)
 )
