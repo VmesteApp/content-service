@@ -96,6 +96,8 @@ def all_pulse(request: Request, session: Session = Depends(get_db)):
 @router.get("/pulses/{pulse_id}")
 def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
     result = session.query(pulse).where(pulse.c.id == pulse_id).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="There is no pulse with this id")
     members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
     return {"id": result.id,
             "category": result.category,
