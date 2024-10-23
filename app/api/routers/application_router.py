@@ -44,8 +44,8 @@ def find_application(pulse_id: int, request: Request, session: Session = Depends
     return {"application": [{"pulse_id": i.pulse_id, "candidate_id": i.candidate_id, "message": i.message, "status": i.status} for i in result]}
 
 
-@router.get("/applications/{candidate_id}")
+@router.get("/application/my")
 def find_application(candidate_id: int, request: Request, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
-    result = session.query((application)).where(application.c.candidate_id == candidate_id)
+    result = session.query((application)).where(application.c.candidate_id ==  request.state.uid)
     return {"application": [{"pulse_id": i.pulse_id, "candidate_id": i.candidate_id, "message": i.message, "status": i.status} for i in result]}
