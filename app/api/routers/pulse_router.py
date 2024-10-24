@@ -65,7 +65,7 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
 
 @router.delete("/pulse/{delete_pulse}")
-def delte_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
     session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
@@ -73,23 +73,25 @@ def delte_pulse(request: Request, delete_pulse: int, session: Session = Depends(
 
 
 @router.get("/pulses")
-def all_pulse(request: Request, session: Session = Depends(get_db)):
-    pulses_member = session.query(pulse_members.c.pulse_id).where(pulse_members.c.user_id == request.state.uid)
+def all_pulses(request: Request, session: Session = Depends(get_db)):
+    pulses_member = session.query(pulse_members.c.pulse_id).filter(pulse_members.c.user_id == request.state.uid).all()
+
     member_in = []
     for i in pulses_member:
         for j in session.query((pulse)).where(pulse.c.id == i[0]):
             member_in.append(j)                
     pulses_founder = session.query((pulse)).where((pulse.c.founder_id == request.state.uid))
-    
+
     for i in pulses_founder:
         member_in.append(i)
-    
+
     return {"pulses": [{"id": i.id,
                         "category" : i.category,
                         "name": i.name,
                         "founder_id": i.founder_id,
                         "description": i.description,
                         "short_description": i.short_description,
+                        "image_paths": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()]
                         } for i in member_in]}
 
 

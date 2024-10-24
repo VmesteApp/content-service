@@ -29,6 +29,7 @@ images = Table(
     metadata,
     Column("image_id", UUID, primary_key=True),
     Column("pulse_id", Integer, ForeignKey("pulse.id")),
+    Column("full_name", String),
     Column("image_path", String),
 )
 

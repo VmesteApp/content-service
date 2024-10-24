@@ -2,6 +2,7 @@ import os
 from uuid import uuid4, UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile, Request, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, delete, func
 
@@ -15,8 +16,15 @@ upload_files_dir = os.path.join('uploaded_files')
 
 
 def get_file_path(unique_id_full):
-    file_path = os.path.join(upload_files_dir, unique_id_full)
+    file_path = os.path.join(upload_files_dir, str(unique_id_full))
     return file_path
+
+
+def check_image_id(image_uuid, session):
+    pulse_exists = session.query(images).filter(images.c.image_id == image_uuid).first()
+    if not pulse_exists:
+        return True
+    return False
 
 
 def check_pulse_id(pulse_id, session):
@@ -26,27 +34,28 @@ def check_pulse_id(pulse_id, session):
     return False
 
 
-@router.get("/image/{pulse_id}")
-async def get_images(request: Request, pulse_id: int, session: Session = Depends(get_db)):
+@router.get("/image/{image_uuid}")
+async def get_images(request: Request, image_uuid: UUID, session: Session = Depends(get_db)):
     if request.state.role != "user":
         raise HTTPException(status_code=403, detail="Invalid role type")
-    if check_pulse_id(pulse_id, session):
-        raise HTTPException(status_code=404, detail="There is no pulse with this id")
+    if check_image_id(image_uuid, session):
+        raise HTTPException(status_code=404, detail="There is no image with this id")
     try:
-        file_paths = session.query(images).where(images.c.pulse_id == pulse_id).all()
-        return {"paths": [list(i) for i in file_paths]}
+        path = session.query(images.c.full_name).filter(images.c.image_id == image_uuid).first()
+        path_res = get_file_path(path[0])
+        return FileResponse(path_res)
     except Exception:
         raise HTTPException(status_code=500, detail="Send file error")
 
 
-@router.post("pulse/{id}/image")
-async def upload_image(request: Request, pulse_id: int, file: UploadFile = File(...), session: Session = Depends(get_db)):
+@router.post("/pulse/{id}/image")
+async def upload_image(request: Request, id: int, file: UploadFile = File(...), session: Session = Depends(get_db)):
     if request.state.role == "user":
-        if check_pulse_id(pulse_id, session):
+        if check_pulse_id(id, session):
             raise HTTPException(status_code=404, detail="There is no pulse with this id")
 
         # checking images count
-        images_count = session.query(func.count()).select_from(images).where(images.c.pulse_id == pulse_id).scalar()
+        images_count = session.query(func.count()).select_from(images).where(images.c.pulse_id == id).scalar()
         if images_count >= 3:
             raise HTTPException(status_code=403, detail="you can't upload more than 3 images")
 
@@ -61,7 +70,7 @@ async def upload_image(request: Request, pulse_id: int, file: UploadFile = File(
             content = await file.read()
             buffer.write(content)
 
-        val = insert(images).values({"image_id": unique_id, "pulse_id": pulse_id, "image_path": image_path})
+        val = insert(images).values({"image_id": unique_id, "pulse_id": id, "full_name": unique_id_full, "image_path": f"https://vmesteapp.ru/content/image/{unique_id}"})
         session.execute(val)
         session.commit()
         raise HTTPException(status_code=200, detail="OK")

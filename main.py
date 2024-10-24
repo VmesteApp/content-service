@@ -5,7 +5,7 @@ from app.api.jwt_decoder import AuthenticationMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 
-app = FastAPI(openapi_prefix="/content")
+app = FastAPI(root_path="/content")
 
 app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(
