@@ -35,9 +35,7 @@ def check_pulse_id(pulse_id, session):
 
 
 @router.get("/image/{image_uuid}")
-async def get_images(request: Request, image_uuid: UUID, session: Session = Depends(get_db)):
-    if request.state.role != "user":
-        raise HTTPException(status_code=403, detail="Invalid role type")
+async def get_images(image_uuid: UUID, session: Session = Depends(get_db)):
     if check_image_id(image_uuid, session):
         raise HTTPException(status_code=404, detail="There is no image with this id")
     try:
