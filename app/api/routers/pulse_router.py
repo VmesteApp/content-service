@@ -31,6 +31,7 @@ async def create_pulse(request: Request, new_pulse: CreatePulse , session: Sessi
                                                 "tag_id": i})
         session.execute(new_pr_tag)
     session.commit()
+    return {"pulse_id": row_id}
 
 
 @router.put("/pulse")
