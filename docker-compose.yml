@@ -7,6 +7,8 @@ services:
       context: .
     image: content-service-vmeste
     container_name: content-service-vmeste
+    volumes:
+      - uploaded_files:/content-service/uploaded_files
     ports:
       - "8000:8000"
     depends_on:
@@ -32,3 +34,4 @@ services:
 
 volumes:
   pg-data:
+  uploaded_files:

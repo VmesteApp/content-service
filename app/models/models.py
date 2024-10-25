@@ -1,15 +1,11 @@
-# from uuid import UUID
-from sqlalchemy import MetaData, Table, Integer, String, Column, UUID
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey
 
 
 metadata = MetaData()
-Base = declarative_base()
 
 application = Table(
     "application",
     metadata,
-    Base.metadata,
     Column("id", Integer, primary_key=True),
     Column("pulse_id", Integer),
     Column("candidate_id", Integer),
@@ -26,6 +22,23 @@ pulse = Table(
     Column("founder_id", Integer),
     Column("description", String),
     Column("short_description", String),
+)
+
+images = Table(
+    "images",
+    metadata,
+    Column("image_id", UUID, primary_key=True),
+    Column("pulse_id", Integer, ForeignKey("pulse.id")),
+    Column("full_name", String),
+    Column("image_path", String),
+)
+
+files = Table(
+    "files",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("file_id", UUID),
+    Column("file_path", String),
 )
 
 tag = Table(
@@ -49,11 +62,4 @@ pulse_members = Table(
     Column("id", Integer, primary_key=True),
     Column("pulse_id", Integer),
     Column("user_id", Integer)
-)
-
-images = Table(
-    "images",
-    metadata,
-    Column("image_id", UUID, primary_key=True),
-    Column("pulse_id", Integer)
 )
