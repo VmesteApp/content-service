@@ -3,7 +3,7 @@ from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select
 from app.models.models import pulse, pulse_tags, tag, pulse_members, images
-from app.schemas.pulse_schemas import CreatePulse, UpdatePulse, DeletePulse
+from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
 
 
@@ -74,16 +74,22 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
 
 @router.get("/pulses")
 def all_pulses(request: Request, session: Session = Depends(get_db)):
-    pulses_member = session.query(pulse_members.c.pulse_id).filter(pulse_members.c.user_id == request.state.uid).all()
+    pulses_members_query = (select(pulse)
+                           .join(pulse_members, pulse_members.c.pulse_id == pulse.c.id)
+                           .where(pulse_members.c.pulse_id.isnot(None)))
 
-    member_in = []
-    for i in pulses_member:
-        for j in session.query((pulse)).where(pulse.c.id == i[0]):
-            member_in.append(j)                
-    pulses_founder = session.query((pulse)).where((pulse.c.founder_id == request.state.uid))
+    pulses_founders_query = (select(pulse)
+                             .where(pulse.c.founder_id == request.state.uid))
 
-    for i in pulses_founder:
-        member_in.append(i)
+    pulses_members = session.execute(pulses_members_query).all()
+    pulses_founders = session.execute(pulses_founders_query).all()
+    
+    all_user_pulses = set()
+    for one_pulse in pulses_members:
+        all_user_pulses.add(one_pulse)
+
+    for one_pulse in pulses_founders:
+        all_user_pulses.add(one_pulse)
 
     return {"pulses": [{"id": i.id,
                         "category" : i.category,
@@ -92,7 +98,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "description": i.description,
                         "short_description": i.short_description,
                         "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()]
-                        } for i in member_in]}
+                        } for i in all_user_pulses]}
 
 
 @router.get("/pulses/{pulse_id}")
