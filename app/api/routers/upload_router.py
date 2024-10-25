@@ -1,5 +1,6 @@
 import os
 from uuid import uuid4, UUID
+from typing import List
 
 from fastapi import APIRouter, Depends, File, UploadFile, Request, HTTPException
 from fastapi.responses import FileResponse
@@ -8,7 +9,7 @@ from sqlalchemy import insert, delete, func
 
 from app.db.session import get_db
 from app.models.models import images, pulse
-from app.schemas.upload_schemas import DeleteImage
+from app.api.role_checker import RoleChecker
 
 
 router = APIRouter()
@@ -47,17 +48,18 @@ async def get_images(image_uuid: UUID, session: Session = Depends(get_db)):
 
 
 @router.post("/pulse/{id}/image")
-async def upload_image(request: Request, id: int, file: UploadFile = File(...), session: Session = Depends(get_db)):
-    if request.state.role == "user":
-        if check_pulse_id(id, session):
-            raise HTTPException(status_code=404, detail="There is no pulse with this id")
+async def upload_image(request: Request, id: int, files: List[UploadFile] = File(...), session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+    role_checker(request)
+    if check_pulse_id(id, session):
+        raise HTTPException(status_code=404, detail="There is no pulse with this id")
 
-        # checking images count
-        images_count = session.query(func.count()).select_from(images).where(images.c.pulse_id == id).scalar()
-        if images_count >= 3:
-            raise HTTPException(status_code=403, detail="you can't upload more than 3 images")
+    # checking images count
+    images_count = session.query(func.count()).select_from(images).where(images.c.pulse_id == id).scalar()
+    if images_count + len(files) >= 101:
+        raise HTTPException(status_code=403, detail="you can't upload more than 100 images")
 
-        # uuid generation, second part for files extensions
+    # uuid generation, second part for files extensions
+    for file in files:
         unique_id = f"{uuid4()}"
         unique_id_full = f"{unique_id}{os.path.splitext(file.filename)[1]}"
 
@@ -71,15 +73,19 @@ async def upload_image(request: Request, id: int, file: UploadFile = File(...), 
         val = insert(images).values({"image_id": unique_id, "pulse_id": id, "full_name": unique_id_full, "image_path": f"https://vmesteapp.ru/content/image/{unique_id}"})
         session.execute(val)
         session.commit()
-        raise HTTPException(status_code=200, detail="OK")
-    else:
-        raise HTTPException(status_code=403, detail="Invalid role type")
+    raise HTTPException(status_code=200, detail="OK")
 
 
-@router.delete("/image/{uuid}")
-def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db)):
-    if request.state.role == "user":
-        session.execute(delete(images).where(images.c.image_id == delete_image_uuid))
-        session.commit()
-    else:
-        raise HTTPException(status_code=403, detail="Invalid role type")
+@router.delete("/image/{delete_image_uuid}")
+def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+    role_checker(request)
+    image_full_name = session.query(images.c.full_name).where(images.c.image_id == delete_image_uuid).first()
+    image_path = get_file_path(image_full_name.full_name)
+    try:
+        os.remove(image_path)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error when deleting an image")
+    session.execute(delete(images).where(images.c.image_id == delete_image_uuid))
+    session.commit()

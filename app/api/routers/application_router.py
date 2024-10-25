@@ -55,12 +55,12 @@ def find_application(pulse_id: int, request: Request, session: Session = Depends
 
 
 @router.get("/application/my")
-def find_application(candidate_id: int, request: Request, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+def find_application(request: Request, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     result = session.query((application)).where(application.c.candidate_id ==  request.state.uid)
     return {"application": [
         {
-            "pulse": {  #  Переход на словарь для импульса
+            "pulse": {
                 "pulse_id": j.id,
                 "category": j.category,
                 "description": j.description,
@@ -70,4 +70,3 @@ def find_application(candidate_id: int, request: Request, session: Session = Dep
             "status": i.status
         } for i in result for j in session.query((pulse)).where(pulse.c.id == i.pulse_id).all()
     ]}
-

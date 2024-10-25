@@ -13,6 +13,10 @@ EXEMPT_PATHS = [r"/content/image/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}"]
 class AuthenticationMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
+
+        request.state.role = None
+        request.state.uid = None
+
         if request.url.path.startswith(("/content/docs", "/content/redoc", "/content/openapi.json")):
             return await call_next(request)
 
