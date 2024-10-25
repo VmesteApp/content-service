@@ -83,7 +83,8 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
 
     pulses_members = session.execute(pulses_members_query).all()
     pulses_founders = session.execute(pulses_founders_query).all()
-    
+    tags = session.query((tag)).all()
+
     all_user_pulses = set()
     for one_pulse in pulses_members:
         all_user_pulses.add(one_pulse)
@@ -97,7 +98,8 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "founder_id": i.founder_id,
                         "description": i.description,
                         "short_description": i.short_description,
-                        "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()]
+                        "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                        "tags": [{"id": i.id, "name": i.name} for i in tags]
                         } for i in all_user_pulses]}
 
 
@@ -108,6 +110,7 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
     members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
+    tags = session.query((tag)).all()
     return {"id": result.id,
             "category": result.category,
             "name": result.name,
@@ -115,5 +118,6 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
             "description": result.description,
             "short_description": result.short_description,
             "members": [member.user_id for member in members],
-            "images": [image.image_path for image in images_query]
+            "images": [image.image_path for image in images_query],
+            "tags": [{"id": i.id, "name": i.name} for i in tags]
             }
