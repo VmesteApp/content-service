@@ -13,7 +13,7 @@ ALLOWED_CATEGORIES = ["project", "event"]
 
 
 @router.post("/pulse")
-async def create_pulse(request: Request, new_pulse: CreatePulse , session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+async def create_pulse(request: Request, new_pulse: CreatePulse , session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if new_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
@@ -35,7 +35,7 @@ async def create_pulse(request: Request, new_pulse: CreatePulse , session: Sessi
 
 
 @router.put("/pulse")
-async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if update_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
@@ -66,7 +66,7 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
 
 @router.delete("/pulse/{delete_pulse}")
-def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
     session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))

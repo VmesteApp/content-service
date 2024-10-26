@@ -48,7 +48,7 @@ async def get_images(image_uuid: UUID, session: Session = Depends(get_db)):
 
 
 @router.post("/pulse/{id}/image")
-async def upload_image(request: Request, id: int, files: List[UploadFile] = File(...), session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+async def upload_image(request: Request, id: int, files: List[UploadFile] = File(...), session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if check_pulse_id(id, session):
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
@@ -77,7 +77,7 @@ async def upload_image(request: Request, id: int, files: List[UploadFile] = File
 
 
 @router.delete("/image/{delete_image_uuid}")
-def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     image_full_name = session.query(images.c.full_name).where(images.c.image_id == delete_image_uuid).first()
     image_path = get_file_path(image_full_name.full_name)

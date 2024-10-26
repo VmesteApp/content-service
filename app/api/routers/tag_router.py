@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("/admin/tags")
-async def create_tag(request: Request, new_tag: CreateTag, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+async def create_tag(request: Request, new_tag: CreateTag, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
     post_tag = insert(tag).values({"name": new_tag.name})
     session.execute(post_tag)
@@ -19,7 +19,7 @@ async def create_tag(request: Request, new_tag: CreateTag, session: Session = De
 
 
 @router.put("/admin/tags")
-async def update_tag(request: Request, up_tag: UpdateTag, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+async def update_tag(request: Request, up_tag: UpdateTag, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
     update_tag = update(tag)
     val = update_tag.values({"name": up_tag.name})
@@ -29,7 +29,7 @@ async def update_tag(request: Request, up_tag: UpdateTag, session: Session = Dep
 
 
 @router.delete("/admin/tags")
-async def delete_tag(request: Request, del_tag: DeleteTag, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+async def delete_tag(request: Request, del_tag: DeleteTag, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
     session.execute(delete(tag).where(del_tag.id == tag.c.id))
     session.commit()
