@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, select
-from app.models.models import application, pulse_members, pulse, images
+from app.models.models import application, pulse_members, pulse, images, pulse_tags
 from app.schemas.applications_schemas import SendApplication, Verdict
 from app.api.role_checker import RoleChecker
 
@@ -60,7 +60,7 @@ def find_application(request: Request, session: Session = Depends(get_db), role_
 
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == request.state.uid).all()
 
-    response_query = (session.query(application.c.message, application.c.status, pulse.c.id,
+    response_query = (session.query(application.c.id, application.c.message, application.c.status, pulse.c.id, pulse.c.name,
                                     pulse.c.category, pulse.c.description, pulse.c.short_description)
                                     .join(pulse, pulse.c.id == application.c.pulse_id)
                                     .where(application.c.candidate_id == request.state.uid).all())
@@ -74,11 +74,14 @@ def find_application(request: Request, session: Session = Depends(get_db), role_
         {
             "pulse": {
                 "pulse_id": i.id,
+                "pulse_name": i.name,
                 "category": i.category,
                 "description": i.description,
                 "short_description": i.short_description,
                 "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                "tags": [j[0] for j in session.query(pulse_tags.c.tag_id).where(pulse_tags.c.pulse_id == i.id).all()]
             },
+            "application_id": i.id,
             "message": i.message,
             "status": i.status
         } for i in response_query

@@ -84,7 +84,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
 
     pulses_members = session.execute(pulses_members_query).all()
     pulses_founders = session.execute(pulses_founders_query).all()
-    tags = session.query((tag)).all()
+    tags = session.query(tag).all()
 
     all_user_pulses = set()
     for one_pulse in pulses_members:
@@ -111,7 +111,8 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
     members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
-    tags = session.query((tag)).all()
+    tags = session.query(tag).all()
+
     return {"id": result.id,
             "category": result.category,
             "name": result.name,
