@@ -18,5 +18,5 @@ def get_feed(session: Session = Depends(get_db)):
             "description": res.description,
             "short_description": res.short_description,
             "images": [j[3] for j in session.query(images).where(images.c.pulse_id == res.id).all()],
-            "tags": [[j[1], j[2]] for j in tags if j.pulse_id == res.id]
+            "tags": [{"id": j[1], "name": j[2]} for j in tags if j.pulse_id == res.id]
             } for res in result]
