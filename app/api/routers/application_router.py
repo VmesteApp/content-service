@@ -51,7 +51,11 @@ async def update_application(request: Request, verdict: Verdict, session: Sessio
 def find_application(pulse_id: int, request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     result = session.query(application).where(application.c.pulse_id == pulse_id)
-    return {"application": [{"pulse_id": i.pulse_id, "candidate_id": i.candidate_id, "message": i.message, "status": i.status} for i in result]}
+    return {"application": [{"pulse_id": i.pulse_id,
+                             "candidate_id": i.candidate_id,
+                             "application_id": i.id,
+                             "message": i.message,
+                             "status": i.status} for i in result]}
 
 
 @router.get("/application/my/")
