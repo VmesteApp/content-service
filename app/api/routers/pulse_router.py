@@ -70,6 +70,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
     role_checker(request)
     session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
     session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
+    session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
     session.commit()
 
 

@@ -9,16 +9,10 @@ router = APIRouter()
 
 
 @router.get("/feed")
-def get_feed(request: Request, session: Session = Depends(get_db)):
-    query = (
-        session.query(pulse)
-        .outerjoin(pulse_members, pulse.c.id == pulse_members.c.pulse_id)
-        .filter(and_(pulse.c.founder_id != request.state.uid, pulse_members.c.user_id != request.state.uid))
-        .distinct()
-    )
-    result = query.all()
+def get_feed(session: Session = Depends(get_db)):
+    result = session.query(pulse).all()
     tags = session.query(pulse_tags.c.pulse_id, tag.c.name, tag.c.id).join(tag, tag.c.id == pulse_tags.c.tag_id).all()
-    
+
     return [{"id": res.id,
             "category": res.category,
             "name": res.name,
