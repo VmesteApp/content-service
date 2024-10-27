@@ -9,8 +9,9 @@ router = APIRouter()
 
 @router.get("/feed")
 def get_feed(session: Session = Depends(get_db)):
-    result = session.query(pulse).join(pulse_tags, pulse_tags.c.pulse_id == pulse.c.id).all()
+    result = session.query(pulse).all()
     tags = session.query(pulse_tags.c.pulse_id, tag.c.name, tag.c.id).join(tag, tag.c.id == pulse_tags.c.tag_id).all()
+
     return [{"id": res.id,
             "category": res.category,
             "name": res.name,
