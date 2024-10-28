@@ -35,6 +35,18 @@ async def update_application(request: Request, id: int, verdict: Verdict, sessio
     role_checker(request)
     already_in_application_table_check = session.query(application).where(application.c.id == id).first()
     if already_in_application_table_check:
+        pulse_candidate = session.query(application.c.pulse_id, application.c.candidate_id).where(application.c.id == id).first()
+        already_in_pulse_members_check = (session.query(pulse_members)
+                                          .where((pulse_members.c.user_id == pulse_candidate.candidate_id) &
+                                                 (pulse_members.c.pulse_id == pulse_candidate.pulse_id)).first())
+        if already_in_pulse_members_check:
+            return {"this user already in members of this project"}
+        if verdict.status == "APPROVED":
+            new_member = insert(pulse_members).values({"pulse_id": pulse_candidate.pulse_id,
+                                                       "user_id": pulse_candidate.candidate_id
+                                                       })
+            session.execute(new_member)
+            session.commit()            
         cond = update(application).values({"status": verdict.status}).where(application.c.id == id)
         session.execute(cond)
         session.commit()
