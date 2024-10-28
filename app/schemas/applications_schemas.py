@@ -7,6 +7,4 @@ class SendApplication(BaseModel):
 
 
 class Verdict(BaseModel):
-    pulse_id: int
-    candidate_id: int
     status: str

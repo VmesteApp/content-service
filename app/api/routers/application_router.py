@@ -30,21 +30,16 @@ async def create_application(request: Request, new_application: SendApplication,
     session.commit()
 
 
-@router.put("/application/verdict")
-async def update_application(request: Request, verdict: Verdict, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+@router.put("/application/{id}/verdict")
+async def update_application(request: Request, id: int, verdict: Verdict, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
-    already_in_pulse_members_check = session.query(pulse_members).where((pulse_members.c.user_id == verdict.candidate_id) & (pulse_members.c.pulse_id == verdict.pulse_id)).first()
-    if already_in_pulse_members_check:
-        return {"this user already in members of this project"}
-    if verdict.status == "APPROVED":
-        new_member = insert(pulse_members).values({"pulse_id": verdict.pulse_id,
-                                                   "user_id": verdict.candidate_id,
-                                                    })
-        session.execute(new_member)
+    already_in_application_table_check = session.query(application).where(application.c.id == id).first()
+    if already_in_application_table_check:
+        cond = update(application).values({"status": verdict.status}).where(application.c.id == id)
+        session.execute(cond)
         session.commit()
-    cond = update(application).values({"status": verdict.status}).where((application.c.pulse_id == verdict.pulse_id) & (application.c.candidate_id == verdict.candidate_id))
-    session.execute(cond)
-    session.commit()
+    else:
+        raise HTTPException(status_code=404, detail="there is no application with this id")
 
 
 @router.get("/application/{pulse_id}")
@@ -53,7 +48,7 @@ def find_application(pulse_id: int, request: Request, session: Session = Depends
     result = session.query(application).where(application.c.pulse_id == pulse_id)
     return {"application": [{"pulse_id": i.pulse_id,
                              "candidate_id": i.candidate_id,
-                             "application_id": i.id,
+                             "id": i.id,
                              "message": i.message,
                              "status": i.status} for i in result]}
 
@@ -86,7 +81,7 @@ def find_application(request: Request, session: Session = Depends(get_db), role_
                 "short_description": i.short_description,
                 "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
                 },
-            "application_id": i.id,
+            "id": i.id,
             "message": i.message,
             "status": i.status
         } for i in response_query

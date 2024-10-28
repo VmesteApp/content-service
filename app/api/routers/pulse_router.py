@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select
-from app.models.models import pulse, pulse_tags, tag, pulse_members, images
+from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
 
@@ -71,6 +71,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
     session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
     session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
     session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
+    session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
     session.commit()
 
 
