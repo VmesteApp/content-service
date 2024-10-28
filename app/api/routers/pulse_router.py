@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, update, delete, select
+from sqlalchemy import insert, update, delete, select, not_
 from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
@@ -77,23 +77,15 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
 
 @router.get("/pulses")
 def all_pulses(request: Request, session: Session = Depends(get_db)):
-    pulses_members_query = (select(pulse)
-                           .join(pulse_members, pulse_members.c.pulse_id == pulse.c.id)
-                           .where(pulse_members.c.pulse_id.isnot(None)))
 
-    pulses_founders_query = (select(pulse)
-                             .where(pulse.c.founder_id == request.state.uid))
+    project_members_subquery = (select(pulse_members.c.pulse_id)
+                                .where(pulse_members.c.user_id == request.state.uid))
 
-    pulses_members = session.execute(pulses_members_query).all()
-    pulses_founders = session.execute(pulses_founders_query).all()
-    tags = session.query(tag).all()
-
-    all_user_pulses = set()
-    for one_pulse in pulses_members:
-        all_user_pulses.add(one_pulse)
-
-    for one_pulse in pulses_founders:
-        all_user_pulses.add(one_pulse)
+    query = (select(pulse).where(not_(pulse.c.founder_id == request.state.uid),
+                                 not_(pulse.c.id.in_(project_members_subquery))))
+    
+    res = session.execute(query).all()
+    print(request.state.uid)
 
     return {"pulses": [{"id": i.id,
                         "category" : i.category,
@@ -102,8 +94,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "description": i.description,
                         "short_description": i.short_description,
                         "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
-                        "tags": [{"id": i.id, "name": i.name} for i in tags]
-                        } for i in all_user_pulses]}
+                        } for i in res]}
 
 
 @router.get("/pulses/{pulse_id}")

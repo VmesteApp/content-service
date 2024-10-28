@@ -81,8 +81,6 @@ def find_application(request: Request, session: Session = Depends(get_db), role_
             if images_for_pulse.pulse_id == pulse_application.pulse_id:
                 pulse_application.append(images_for_pulse.image_path)
 
-    tags = session.query(tag).all()
-
     return {"application": [
         {
             "pulse": {
