@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, update, delete, select, not_
+from sqlalchemy import insert, update, delete, select, or_
 from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
@@ -81,11 +81,9 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
     project_members_subquery = (select(pulse_members.c.pulse_id)
                                 .where(pulse_members.c.user_id == request.state.uid))
 
-    query = (select(pulse).where(not_(pulse.c.founder_id == request.state.uid),
-                                 not_(pulse.c.id.in_(project_members_subquery))))
+    query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid, pulse.c.id.in_(project_members_subquery))))
     
     res = session.execute(query).all()
-    print(request.state.uid)
 
     return {"pulses": [{"id": i.id,
                         "category" : i.category,
