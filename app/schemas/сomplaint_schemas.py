@@ -6,5 +6,4 @@ class CreateСomplaint(BaseModel):
 
 
 class VerdictСomplaint(BaseModel):
-    id: int
     verdict: str
