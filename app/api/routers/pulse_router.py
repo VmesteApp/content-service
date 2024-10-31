@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, update, delete, select
-from app.models.models import pulse, pulse_tags, tag, pulse_members, images
+from sqlalchemy import insert, update, delete, select, or_
+from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
 
@@ -13,7 +13,7 @@ ALLOWED_CATEGORIES = ["project", "event"]
 
 
 @router.post("/pulse")
-async def create_pulse(request: Request, new_pulse: CreatePulse , session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+async def create_pulse(request: Request, new_pulse: CreatePulse , session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if new_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
@@ -35,7 +35,7 @@ async def create_pulse(request: Request, new_pulse: CreatePulse , session: Sessi
 
 
 @router.put("/pulse")
-async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if update_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
@@ -66,31 +66,24 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
 
 @router.delete("/pulse/{delete_pulse}")
-def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
     session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
+    session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
+    session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
     session.commit()
 
 
 @router.get("/pulses")
 def all_pulses(request: Request, session: Session = Depends(get_db)):
-    pulses_members_query = (select(pulse)
-                           .join(pulse_members, pulse_members.c.pulse_id == pulse.c.id)
-                           .where((pulse_members.c.pulse_id.isnot(None)) & (pulse_members.c.user_id == request.state.uid) & (pulse.c.blocked != True)))
 
-    pulses_founders_query = (select(pulse)
-                             .where(pulse.c.founder_id == request.state.uid))
+    project_members_subquery = (select(pulse_members.c.pulse_id)
+                                .where(pulse_members.c.user_id == request.state.uid))
 
-    pulses_members = session.execute(pulses_members_query).all()
-    pulses_founders = session.execute(pulses_founders_query).all()
+    query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid, pulse.c.id.in_(project_members_subquery))))
     
-    all_user_pulses = set()
-    for one_pulse in pulses_members:
-        all_user_pulses.add(one_pulse)
-
-    for one_pulse in pulses_founders:
-        all_user_pulses.add(one_pulse)
+    res = session.execute(query).all()
 
     return {"pulses": [{"id": i.id,
                         "category" : i.category,
@@ -98,9 +91,8 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "founder_id": i.founder_id,
                         "description": i.description,
                         "short_description": i.short_description,
-                        "blocked": i.blocked,
-                        "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()]
-                        } for i in all_user_pulses]}
+                        "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                        } for i in res]}
 
 
 @router.get("/pulses/{pulse_id}")
@@ -110,6 +102,10 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
     members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
+    tags = (session.query(pulse_tags.c.pulse_id, tag.c.id, tag.c.name)
+            .join(tag, tag.c.id == pulse_tags.c.tag_id).
+            where(pulse_tags.c.pulse_id == pulse_id).all())
+
     return {"id": result.id,
             "category": result.category,
             "name": result.name,
@@ -117,5 +113,6 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
             "description": result.description,
             "short_description": result.short_description,
             "members": [member.user_id for member in members],
-            "images": [image.image_path for image in images_query]
+            "images": [image.image_path for image in images_query],
+            "tags": [{"id": i.id, "name": i.name} for i in tags]
             }

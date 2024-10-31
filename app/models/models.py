@@ -1,4 +1,5 @@
-from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey
+from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey, DateTime
+from sqlalchemy.sql import func
 
 
 metadata = MetaData()
@@ -11,6 +12,8 @@ application = Table(
     Column("candidate_id", Integer),
     Column("message", String),
     Column("status", String, default="PENDING"),
+    Column("created_at", DateTime, default=func.now()),
+    Column("updated_at", DateTime, default=func.now(), onupdate=func.now())
 )
 
 pulse = Table(
@@ -22,15 +25,18 @@ pulse = Table(
     Column("founder_id", Integer),
     Column("description", String),
     Column("short_description", String),
+    Column("created_at", DateTime, default=func.now()),
+    Column("updated_at", DateTime, default=func.now(), onupdate=func.now())
 )
 
 images = Table(
     "images",
     metadata,
     Column("image_id", UUID, primary_key=True),
-    Column("pulse_id", Integer, ForeignKey("pulse.id")),
+    Column("pulse_id", Integer, ForeignKey("pulse.id", ondelete="CASCADE")),
     Column("full_name", String),
     Column("image_path", String),
+    Column("uploaded_at", DateTime, default=func.now()),
 )
 
 files = Table(
