@@ -77,7 +77,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
 def all_pulses(request: Request, session: Session = Depends(get_db)):
     pulses_members_query = (select(pulse)
                            .join(pulse_members, pulse_members.c.pulse_id == pulse.c.id)
-                           .where(pulse_members.c.pulse_id.isnot(None)))
+                           .where((pulse_members.c.pulse_id.isnot(None)) & (pulse_members.c.user_id == request.state.uid) & (pulse.c.blocked != True)))
 
     pulses_founders_query = (select(pulse)
                              .where(pulse.c.founder_id == request.state.uid))
@@ -98,6 +98,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "founder_id": i.founder_id,
                         "description": i.description,
                         "short_description": i.short_description,
+                        "blocked": i.blocked,
                         "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()]
                         } for i in all_user_pulses]}
 
