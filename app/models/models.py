@@ -69,3 +69,12 @@ pulse_members = Table(
     Column("pulse_id", Integer),
     Column("user_id", Integer)
 )
+
+complaints = Table(
+    "complaints",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("pulse_id", Integer),
+    Column("message", String),
+    Column("status", String, default="PENDING"),
+)
