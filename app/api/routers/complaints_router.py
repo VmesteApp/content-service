@@ -10,7 +10,7 @@ from app.api.role_checker import RoleChecker
 router = APIRouter()
 
 
-@router.post("/complaints/{pulseID}")
+@router.post("/complaints/{pulseID}/complaint")
 def create_complaint(request: Request, pulseID: int, new_complaint: CreateСomplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     post_complaint = insert(complaints).values({"pulse_id": pulseID,
@@ -32,17 +32,20 @@ def all_complaints(request: Request, session: Session = Depends(get_db), role_ch
                         } for i in all_complaints]}
 
 
-@router.put("/complaints/{pulseID}/verdict")
-async def update_complaint(request: Request, pulseID: int, verdict: VerdictСomplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+@router.put("/complaints/{complaintID}/verdict")
+async def update_complaint(request: Request, complaintID: int, verdict: VerdictСomplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
     up_complaint = update(complaints)
+    print()
     if verdict.verdict == "APPROVED":
+        pulse_id = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID)
+        print(pulse_id)
         vals_compl = up_complaint.values({"status": verdict.verdict})
         up_pulse_block = update(pulse)
-        session.execute(vals_compl.where(complaints.c.id == verdict.id))
+        session.execute(vals_compl.where(complaints.c.id == complaintID))
         vals_pilse = up_pulse_block.values({"blocked": True})
-        session.execute(vals_pilse.where(pulseID == pulse.c.id))
+        session.execute(vals_pilse.where(pulse_id == pulse.c.id))
     else:
         vals_compl = up_complaint.values({"verdict": verdict.verdict})
-        session.execute(vals_compl.where(complaints.c.id == verdict.id))
+        session.execute(vals_compl.where(complaints.c.id == complaintID))
     session.commit()
