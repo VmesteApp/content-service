@@ -10,7 +10,7 @@ from app.api.role_checker import RoleChecker
 router = APIRouter()
 
 
-@router.post("/complaints/{pulseID}/complaint")
+@router.post("/pulses/{pulseID}/complaint")
 def create_complaint(request: Request, pulseID: int, new_complaint: CreateComplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     post_complaint = insert(complaints).values({"pulse_id": pulseID,
