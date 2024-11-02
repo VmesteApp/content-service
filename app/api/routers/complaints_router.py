@@ -37,7 +37,7 @@ async def update_complaint(request: Request, complaintID: int, verdict: VerdictC
     up_complaint = update(complaints)
 
     if verdict.verdict == "APPROVED":
-        pulse_id = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID).all()
+        pulse_id = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID).first()
         vals_compl = up_complaint.values({"status": verdict.verdict})
         up_pulse_block = update(pulse)
         session.execute(vals_compl.where(complaints.c.id == complaintID))
