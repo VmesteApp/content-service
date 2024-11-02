@@ -116,5 +116,6 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
             "short_description": result.short_description,
             "members": [member.user_id for member in members],
             "images": [image.image_path for image in images_query],
-            "tags": [{"id": i.id, "name": i.name} for i in tags]
+            "tags": [{"id": i.id, "name": i.name} for i in tags],
+            "blocked": result.blocked,
             }
