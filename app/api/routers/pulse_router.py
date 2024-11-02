@@ -78,11 +78,11 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
 @router.get("/pulses")
 def all_pulses(request: Request, session: Session = Depends(get_db)):
 
-    project_members_subquery = (select(pulse_members.c.pulse_id)
-                                .where(pulse_members.c.user_id == request.state.uid))
+    project_members_subquery = (select(pulse_members.c.pulse_id).join(pulse, pulse.c.id == pulse_members.c.pulse_id)
+                                .where(and_(pulse_members.c.user_id == request.state.uid, pulse.c.blocked.isnot(True))))
 
-    query = (select(pulse).where(and_(or_(pulse.c.founder_id == request.state.uid,
-                                          pulse.c.id.in_(project_members_subquery)), pulse.c.blocked.isnot(True))))
+    query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid,
+                                     pulse.c.id.in_(project_members_subquery))))
     
     res = session.execute(query).all()
 
