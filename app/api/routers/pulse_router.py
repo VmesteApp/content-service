@@ -72,6 +72,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
     session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
     session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
     session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
+    session.execute(delete(images).where(delete_pulse == images.c.pulse_id))
     session.commit()
 
 
