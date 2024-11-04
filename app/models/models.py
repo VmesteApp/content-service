@@ -78,4 +78,6 @@ complaints = Table(
     Column("pulse_id", Integer),
     Column("message", String),
     Column("status", String, default="PENDING"),
+    Column("created_at", DateTime, default=func.now()),
+    Column("updated_at", DateTime, default=func.now(), onupdate=func.now())
 )
