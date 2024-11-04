@@ -69,17 +69,10 @@ def find_application(pulse_id: int, request: Request, session: Session = Depends
 def find_application(request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
 
-    images_query = session.query(images.c.image_path).where(images.c.pulse_id == request.state.uid).all()
-
     response_query = (session.query(application.c.id, application.c.message, application.c.status, pulse.c.id, pulse.c.name,
                                     pulse.c.category, pulse.c.description, pulse.c.short_description)
                                     .join(pulse, pulse.c.id == application.c.pulse_id)
                                     .where(application.c.candidate_id == request.state.uid).all())
-
-    for pulse_application in response_query:
-        for images_for_pulse in images_query:
-            if images_for_pulse.pulse_id == pulse_application.pulse_id:
-                pulse_application.append(images_for_pulse.image_path)
 
     return {"application": [
         {
@@ -89,7 +82,7 @@ def find_application(request: Request, session: Session = Depends(get_db), role_
                 "category": i.category,
                 "description": i.description,
                 "short_description": i.short_description,
-                "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                "images": [j[2] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
                 },
             "id": i.id,
             "message": i.message,
