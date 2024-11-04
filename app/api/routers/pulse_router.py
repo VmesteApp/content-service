@@ -85,7 +85,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "description": i.description,
                         "short_description": i.short_description,
                         "blocked": i.blocked,
-                        "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                        "images": [j.image_path for j in session.query(images).where(images.c.pulse_id == i.id).all()],
                         } for i in res]}
 
 
