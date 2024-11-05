@@ -113,7 +113,13 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
             "description": result.description,
             "short_description": result.short_description,
             "members": [member.user_id for member in members],
-            "blocked": i.blocked,
+            "blocked": result.blocked,
             "images": [image.image_path for image in images_query],
             "tags": [{"id": i.id, "name": i.name} for i in tags]
             }
+
+
+@router.delete("/pulses/{pulseID}/members/{userID}")
+def delete_user(pulseID : int, userID : int, request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+    session.execute(delete(pulse_members).where(and_(pulse_members.c.pulse_id == pulseID, pulse_members.c.user_id == userID)))
+    session.commit()
