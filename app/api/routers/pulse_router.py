@@ -68,11 +68,15 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 @router.delete("/pulse/{delete_pulse}")
 def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
-    session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
-    session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
-    session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
-    session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
-    session.commit()
+    founder = session.query(pulse.c.founder_id).where(pulse.c.id == delete_pulse).first()[0]
+    if founder == request.state.uid:
+        session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
+        session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
+        session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
+        session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
+        session.commit()
+    else:
+        return JSONResponse(status_code=403, content="Insufficient rights to delete the pulse")
 
 
 @router.get("/pulses")
@@ -121,5 +125,9 @@ def find_pulse(pulse_id: int, session: Session = Depends(get_db)):
 
 @router.delete("/pulses/{pulseID}/members/{userID}")
 def delete_user(pulseID : int, userID : int, request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
-    session.execute(delete(pulse_members).where(and_(pulse_members.c.pulse_id == pulseID, pulse_members.c.user_id == userID)))
-    session.commit()
+    founder = session.query(pulse.c.founder_id).where(pulse.c.id == pulseID).first()[0]
+    if founder == request.state.uid:
+        session.execute(delete(pulse_members).where(and_(pulse_members.c.pulse_id == pulseID, pulse_members.c.user_id == userID)))
+        session.commit()
+    else:
+        return JSONResponse(status_code=403, content="There are not enough rights to delete the user from this pulse")
