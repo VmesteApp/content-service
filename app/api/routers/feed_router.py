@@ -15,7 +15,8 @@ def get_feed(request: Request, session: Session = Depends(get_db)):
                                 .where(pulse_members.c.user_id == request.state.uid))
 
     query = (select(pulse).where(not_(pulse.c.founder_id == request.state.uid),
-                                 not_(pulse.c.id.in_(pulse_members_subquery))))
+                                 not_(pulse.c.id.in_(pulse_members_subquery)),
+                                 pulse.c.blocked.isnot(True)))
     
     result = session.execute(query).all()
 

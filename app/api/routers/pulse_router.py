@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, update, delete, select, or_
+from sqlalchemy import insert, update, delete, select, or_, and_
 from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
@@ -40,53 +40,47 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
     role_checker(request)
     if update_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
-    new_tagss = []
-    pulse_up = update(pulse)
-    val = pulse_up.values({"category": update_pulse.category,
-                            "name": update_pulse.name,
-                            "description": update_pulse.description,
-                            "short_description": update_pulse.short_description})
-    cond = val.where(pulse.c.id == update_pulse.id)
-    session.execute(cond)
-    update_tags = list(update_pulse.tags.split(","))
-    tags_id_old = session.execute(select(pulse_tags.c.tag_id)
-                                    .where(update_pulse.id == pulse_tags.c.pulse_id)).scalars().all()
-    for i in update_tags:
-        tag_id = session.execute(select(tag).where(tag.c.name == i)).scalar()
-        new_tagss.append(tag_id)
-        if tag_id not in tags_id_old:
-            new_pr_tag = insert(pulse_tags).values({"pulse_id": update_pulse.id,
-                                                    "tag_id": tag_id})
-            session.execute(new_pr_tag)
-    for j in tags_id_old:
-        if j not in new_tagss:
-            session.execute(delete(pulse_tags)
-                                    .where((pulse_tags.c.tag_id == j) &
-                                        (update_pulse.id == pulse_tags.c.pulse_id)))
+    
+    new_tags = update_pulse.tags.split(",")
+
+    pulse_update = update(pulse).values({"category": update_pulse.category,
+                                         "name": update_pulse.name,
+                                         "description": update_pulse.description,
+                                         "short_description": update_pulse.short_description}).where(pulse.c.id == update_pulse.id)
+    
+    session.execute(pulse_update)
+
+    session.execute(delete(pulse_tags).where(pulse_tags.c.pulse_id == update_pulse.id))
+    for new_tag in new_tags:
+        session.execute(insert(pulse_tags).values({"pulse_id": update_pulse.id, "tag_id": new_tag}))
+
     session.commit()
 
 
 @router.delete("/pulse/{delete_pulse}")
 def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
+
     founder = session.query(pulse.c.founder_id).where(pulse.c.id == delete_pulse).first()[0]
     if founder == request.state.uid:
         session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
         session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
         session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
         session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
+        session.execute(delete(images).where(delete_pulse == images.c.pulse_id))
         session.commit()
     else:
         return JSONResponse(status_code=403, content="Insufficient rights to delete the pulse")
 
 
-@router.get("/pulses")
+@router.get("/pulses/my/")
 def all_pulses(request: Request, session: Session = Depends(get_db)):
 
-    project_members_subquery = (select(pulse_members.c.pulse_id)
-                                .where(pulse_members.c.user_id == request.state.uid))
+    project_members_subquery = (select(pulse_members.c.pulse_id).join(pulse, pulse.c.id == pulse_members.c.pulse_id)
+                                .where(and_(pulse_members.c.user_id == request.state.uid, pulse.c.blocked.isnot(True))))
 
-    query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid, pulse.c.id.in_(project_members_subquery))))
+    query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid,
+                                     pulse.c.id.in_(project_members_subquery))))
     
     res = session.execute(query).all()
 
@@ -96,7 +90,8 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
                         "founder_id": i.founder_id,
                         "description": i.description,
                         "short_description": i.short_description,
-                        "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                        "blocked": i.blocked,
+                        "images": [j.image_path for j in session.query(images).where(images.c.pulse_id == i.id).all()],
                         } for i in res]}
 
 
@@ -122,7 +117,8 @@ def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_d
             "members": [member.user_id for member in members],
             "blocked": result.blocked,
             "images": [image.image_path for image in images_query],
-            "tags": [{"id": i.id, "name": i.name} for i in tags]
+            "tags": [{"id": i.id, "name": i.name} for i in tags],
+            "blocked": result.blocked,
             }
 
 

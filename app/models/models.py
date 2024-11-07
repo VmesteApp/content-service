@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey, DateTime
+from sqlalchemy import MetaData, Table, Integer, String, Column, UUID, ForeignKey, DateTime, Boolean
 from sqlalchemy.sql import func
 
 
@@ -26,7 +26,8 @@ pulse = Table(
     Column("description", String),
     Column("short_description", String),
     Column("created_at", DateTime, default=func.now()),
-    Column("updated_at", DateTime, default=func.now(), onupdate=func.now())
+    Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+    Column("blocked", Boolean, default=False)
 )
 
 images = Table(
@@ -77,4 +78,6 @@ complaints = Table(
     Column("pulse_id", Integer),
     Column("message", String),
     Column("status", String, default="PENDING"),
+    Column("created_at", DateTime, default=func.now()),
+    Column("updated_at", DateTime, default=func.now(), onupdate=func.now())
 )

@@ -69,29 +69,23 @@ def find_application(pulse_id: int, request: Request, session: Session = Depends
 def find_application(request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
 
-    images_query = session.query(images.c.image_path).where(images.c.pulse_id == request.state.uid).all()
-
-    response_query = (session.query(application.c.id, application.c.message, application.c.status, pulse.c.id, pulse.c.name,
-                                    pulse.c.category, pulse.c.description, pulse.c.short_description)
+    response_query = (session.query(application.c.id.label("application_id"), application.c.message, application.c.status,
+                                    pulse.c.id.label("pulse_id"), pulse.c.name, pulse.c.category, pulse.c.description,
+                                    pulse.c.short_description)
                                     .join(pulse, pulse.c.id == application.c.pulse_id)
                                     .where(application.c.candidate_id == request.state.uid).all())
-
-    for pulse_application in response_query:
-        for images_for_pulse in images_query:
-            if images_for_pulse.pulse_id == pulse_application.pulse_id:
-                pulse_application.append(images_for_pulse.image_path)
 
     return {"application": [
         {
             "pulse": {
-                "pulse_id": i.id,
+                "pulse_id": i.pulse_id,
                 "name": i.name,
                 "category": i.category,
                 "description": i.description,
                 "short_description": i.short_description,
-                "images": [j[3] for j in session.query(images).where(images.c.pulse_id == i.id).all()],
+                "images": [j.image_path for j in session.query(images).where(images.c.pulse_id == i.pulse_id).all()],
                 },
-            "id": i.id,
+            "id": i.application_id,
             "message": i.message,
             "status": i.status
         } for i in response_query

@@ -9,4 +9,4 @@ class RoleChecker:
     def __call__(self, request: Request):
         if request.state.role in self.allowed_roles:
             return True
-        return JSONResponse(status_code=401, content="Invalid roly type")
+        raise HTTPException(status_code=401, detail="Invalid role type")

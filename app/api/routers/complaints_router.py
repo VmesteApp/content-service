@@ -1,21 +1,21 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, update, delete, select
+from sqlalchemy import insert, update
 from app.models.models import complaints, pulse
-from app.schemas.сomplaint_schemas import CreateСomplaint, VerdictСomplaint
+from app.schemas.complaint_schemas import CreateComplaint, VerdictComplaint
 from app.api.role_checker import RoleChecker
 
 
 router = APIRouter()
 
 
-@router.post("/complaints/{pulseID}/complaint")
-def create_complaint(request: Request, pulseID: int, new_complaint: CreateСomplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
+@router.post("/pulses/{pulseID}/complaint")
+def create_complaint(request: Request, pulseID: int, new_complaint: CreateComplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     post_complaint = insert(complaints).values({"pulse_id": pulseID,
-                                        "message": new_complaint.message,
-                                        })
+                                                "message": new_complaint.message,
+                                                })
     session.execute(post_complaint)
     session.commit()
 
@@ -23,8 +23,7 @@ def create_complaint(request: Request, pulseID: int, new_complaint: CreateСompl
 @router.get("/complaints")
 def all_complaints(request: Request, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)          
-    all_complaints = session.query(complaints).where()
-    print(63263723)
+    all_complaints = session.query(complaints).all()
     return {"complaints": [{"id": i.id,
                         "pulse_id" : i.pulse_id,
                         "message": i.message,
@@ -33,19 +32,18 @@ def all_complaints(request: Request, session: Session = Depends(get_db), role_ch
 
 
 @router.put("/complaints/{complaintID}/verdict")
-async def update_complaint(request: Request, complaintID: int, verdict: VerdictСomplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+async def update_complaint(request: Request, complaintID: int, verdict: VerdictComplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
-    up_complaint = update(complaints)
-    print()
+
     if verdict.verdict == "APPROVED":
-        pulse_id = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID)
-        print(pulse_id)
-        vals_compl = up_complaint.values({"status": verdict.verdict})
-        up_pulse_block = update(pulse)
-        session.execute(vals_compl.where(complaints.c.id == complaintID))
-        vals_pilse = up_pulse_block.values({"blocked": True})
-        session.execute(vals_pilse.where(pulse_id == pulse.c.id))
+        pulse_id_from_complaints = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID).first()
+
+        vals_compl = update(complaints).values({"status": verdict.verdict}).where(complaints.c.id == complaintID)
+        vals_pulse = update(pulse).values({"blocked": True}).where(pulse_id_from_complaints.pulse_id == pulse.c.id)
+
+        session.execute(vals_compl)
+        session.execute(vals_pulse)
     else:
-        vals_compl = up_complaint.values({"verdict": verdict.verdict})
+        vals_compl = update(complaints).values({"status": verdict.verdict})
         session.execute(vals_compl.where(complaints.c.id == complaintID))
     session.commit()
