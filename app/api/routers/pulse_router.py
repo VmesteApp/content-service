@@ -122,6 +122,28 @@ def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_d
             }
 
 
+@router.get("/pulses/{pulse_id}/preview")
+def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_db)):
+    result = session.query(pulse).where(pulse.c.id == pulse_id).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="There is no pulse with this id")
+    members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
+    images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
+    tags = (session.query(pulse_tags.c.pulse_id, tag.c.id, tag.c.name)
+            .join(tag, tag.c.id == pulse_tags.c.tag_id).
+            where(pulse_tags.c.pulse_id == pulse_id).all())
+
+    return {"id": result.id,
+            "category": result.category,
+            "name": result.name,
+            "description": result.description,
+            "short_description": result.short_description,
+            "blocked": result.blocked,
+            "images": [image.image_path for image in images_query],
+            "tags": [{"id": i.id, "name": i.name} for i in tags]
+            }
+
+
 @router.delete("/pulses/{pulseID}/members/{userID}")
 def delete_user(pulseID : int, userID : int, request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     founder = session.query(pulse.c.founder_id).where(pulse.c.id == pulseID).first()[0]
