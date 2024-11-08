@@ -146,8 +146,10 @@ def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_d
 
 @router.delete("/pulses/{pulseID}/members/{userID}")
 def delete_user(pulseID : int, userID : int, request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
-    founder = session.query(pulse.c.founder_id).where(pulse.c.id == pulseID).first()[0]
-    if founder == request.state.uid:
+    founder = session.query(pulse.c.founder_id).where(pulse.c.id == pulseID).first()
+    if founder == None:
+        raise HTTPException(status_code=404, detail="There is no pulse with this id")
+    if request.state.uid in founder:
         session.execute(delete(pulse_members).where(and_(pulse_members.c.pulse_id == pulseID, pulse_members.c.user_id == userID)))
         session.commit()
     else:
