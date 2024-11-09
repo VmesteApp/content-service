@@ -101,7 +101,8 @@ def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_d
     if not result:
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
     members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
-    if request.state.uid not in members and request.state.uid != result.founder_id:
+    membr = [i[0] for i in members]
+    if request.state.uid not in membr and request.state.uid != result.founder_id:
         return JSONResponse(status_code=403, content={"message": "There are not enough rights"})
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
     tags = (session.query(pulse_tags.c.pulse_id, tag.c.id, tag.c.name)
