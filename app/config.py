@@ -5,3 +5,4 @@ import os
 load_dotenv()
 
 DB_URL = os.environ.get("DB_URL")
+Secret = os.environ.get("Secret")
