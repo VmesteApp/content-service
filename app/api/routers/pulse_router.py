@@ -160,5 +160,5 @@ def delete_user(pulseID : int, userID : int, request: Request, session: Session 
 @router.put("/admin/pulse/{pulseID}/moderation")
 def change_status(pulseID : int, request: Request, new_status: ChangeStatus, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
-    session.execute(update(pulse).values({"blocked": new_status.status}).where(pulse.c.id == pulseID))
+    session.execute(update(pulse).values({"blocked": new_status.blocked}).where(pulse.c.id == pulseID))
     session.commit()
