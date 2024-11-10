@@ -20,3 +20,7 @@ class UpdatePulse(BaseModel):
 
 class DeletePulse(BaseModel):
     id: int
+
+
+class ChangeStatus(BaseModel):
+    status: bool
