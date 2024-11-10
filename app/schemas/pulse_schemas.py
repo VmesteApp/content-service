@@ -23,4 +23,4 @@ class DeletePulse(BaseModel):
 
 
 class ChangeStatus(BaseModel):
-    status: bool
+    blocked: bool
