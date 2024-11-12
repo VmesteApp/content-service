@@ -162,3 +162,65 @@ def change_status(pulseID : int, request: Request, new_status: ChangeStatus, ses
     role_checker(request)
     session.execute(update(pulse).values({"blocked": new_status.blocked}).where(pulse.c.id == pulseID))
     session.commit()
+
+
+@router.get("/pulses/")
+def all_pulses(
+    request: Request,
+    session: Session = Depends(get_db),
+    role_checker=RoleChecker(allowed_roles=["admin", "superadmin"]), 
+    page: int = 1,     # Номер страницы, по умолчанию 1
+    page_size: int = 10 # Размер страницы, по умолчанию 10
+):
+    role_checker(request)
+
+    # Проверка корректности страницы и размера страницы
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page number must be greater than 0.")
+    
+    # Общее количество пульсов для использования в пагинации
+    total_pulses = session.query(pulse).count()
+
+    # Вычисление смещения
+    offset = (page - 1) * page_size
+
+    # Получаем пульсы с лимитом и смещением
+    res = (
+        session.query(pulse)
+        .limit(page_size)
+        .offset(offset)
+        .all()
+    )
+
+    # Формируем результат
+    return {
+        "total": total_pulses,
+        "page": page,
+        "page_size": page_size,
+        "pulses": [
+            {
+                "id": i.id,
+                "category": i.category,
+                "name": i.name,
+                "founder_id": i.founder_id,
+                "description": i.description,
+                "short_description": i.short_description,
+                "tags": [
+                    j[0] for j in session.query(tag.c.name)
+                    .join(pulse_tags, pulse_tags.c.pulse_id == i.id)
+                    .where(pulse_tags.c.tag_id == tag.c.id)
+                    .all()
+                ],
+                "members": [
+                    j[0] for j in session.query(pulse_members.c.id)
+                    .where(pulse_members.c.pulse_id == i.id)
+                    .all()
+                ],
+                "images": [
+                    j[3] for j in session.query(images)
+                    .where(images.c.pulse_id == i.id)
+                    .all()
+                ],
+            } for i in res
+        ]
+    }
