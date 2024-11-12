@@ -4,7 +4,7 @@ from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select, or_, and_
 from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
-from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
+from app.schemas.pulse_schemas import CreatePulse, UpdatePulse, ChangeStatus
 from app.api.role_checker import RoleChecker
 
 
@@ -155,3 +155,10 @@ def delete_user(pulseID : int, userID : int, request: Request, session: Session 
         session.commit()
     else:
         return JSONResponse(status_code=403, content="There are not enough rights to delete the user from this pulse")
+
+
+@router.put("/admin/pulse/{pulseID}/moderation")
+def change_status(pulseID : int, request: Request, new_status: ChangeStatus, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+    role_checker(request)
+    session.execute(update(pulse).values({"blocked": new_status.blocked}).where(pulse.c.id == pulseID))
+    session.commit()
