@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.get("/feed")
-def get_feed(request: Request, skip: int, limit: int,
+def get_feed(request: Request, skip: Optional[int] = 0, limit: Optional[int] = 100,
              tag: Optional[List[int]] = Query(None), name: Optional[str] = None,
              session: Session = Depends(get_db)):
 
