@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete
-from app.models.models import tag
+from app.models.models import tag, pulse_tags
 from app.schemas.tag_schemas import CreateTag, UpdateTag, DeleteTag
 from app.api.role_checker import RoleChecker
 
@@ -32,6 +32,7 @@ async def update_tag(request: Request, up_tag: UpdateTag, session: Session = Dep
 async def delete_tag(request: Request, del_tag: DeleteTag, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
     session.execute(delete(tag).where(del_tag.id == tag.c.id))
+    session.execute(delete(pulse_tags).where(del_tag.id == pulse_tags.c.tag_id))
     session.commit()
 
 
