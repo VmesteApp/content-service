@@ -1,6 +1,8 @@
 import os
 from uuid import uuid4, UUID
-from typing import List
+from base64 import b64decode
+from typing import List, Optional
+from mimetypes import guess_extension
 
 from fastapi import APIRouter, Depends, File, UploadFile, Request, HTTPException
 from fastapi.responses import FileResponse
@@ -10,6 +12,7 @@ from sqlalchemy import insert, delete, func
 from app.db.session import get_db
 from app.models.models import images, pulse
 from app.api.role_checker import RoleChecker
+from app.schemas.upload_schemas import UploadNewFile
 
 
 router = APIRouter()
@@ -77,7 +80,8 @@ async def upload_image(request: Request, id: int, files: List[UploadFile] = File
 
 
 @router.delete("/image/{delete_image_uuid}")
-def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+def delete_image(request: Request, delete_image_uuid: UUID, session: Session = Depends(get_db),
+                 role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     image_full_name = session.query(images.c.full_name).where(images.c.image_id == delete_image_uuid).first()
     image_path = get_file_path(image_full_name.full_name)

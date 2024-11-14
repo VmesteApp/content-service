@@ -14,10 +14,17 @@ ALLOWED_CATEGORIES = ["project", "event"]
 
 
 @router.post("/pulse")
-async def create_pulse(request: Request, new_pulse: CreatePulse , session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+async def create_pulse(request: Request, new_pulse: CreatePulse, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if new_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
+
+    new_pulse_tags = list(new_pulse.tags.split(","))
+    for i in new_pulse_tags:
+        tag_in_db_check = session.query(tag).where(tag.c.id == i).first()
+        if not tag_in_db_check:
+            raise HTTPException(status_code=422, detail="some tag is wrong from those that were sent")
+
     post_pulse = insert(pulse).values({"category": new_pulse.category,
                                         "name": new_pulse.name,
                                         "description": new_pulse.description,
@@ -26,9 +33,9 @@ async def create_pulse(request: Request, new_pulse: CreatePulse , session: Sessi
                                         }).returning(pulse.c.id)
     for row in session.execute(post_pulse):
         row_id = row.id
-    new_pulse_tags = list(new_pulse.tags.split(","))
+
     for i in new_pulse_tags:
-        new_pr_tag = insert(pulse_tags).values({"pulse_id":  row_id,
+        new_pr_tag = insert(pulse_tags).values({"pulse_id": row_id,
                                                 "tag_id": i})
         session.execute(new_pr_tag)
     session.commit()
@@ -124,11 +131,10 @@ def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_d
 
 
 @router.get("/pulses/{pulse_id}/preview")
-def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_db)):
+def find_pulse_preview(pulse_id: int, session: Session = Depends(get_db)):
     result = session.query(pulse).where(pulse.c.id == pulse_id).first()
     if not result:
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
-    members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
     tags = (session.query(pulse_tags.c.pulse_id, tag.c.id, tag.c.name)
             .join(tag, tag.c.id == pulse_tags.c.tag_id).
@@ -158,7 +164,20 @@ def delete_user(pulseID : int, userID : int, request: Request, session: Session 
 
 
 @router.put("/admin/pulse/{pulseID}/moderation")
-def change_status(pulseID : int, request: Request, new_status: ChangeStatus, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+def change_status(pulseID : int, request: Request, new_status: ChangeStatus, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
     session.execute(update(pulse).values({"blocked": new_status.blocked}).where(pulse.c.id == pulseID))
     session.commit()
+
+
+@router.get("/admin/pulses")
+def all_pulses_admin(request: Request, skip: int, limit: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
+    role_checker(request)
+
+    all_pulses_response = session.query(pulse).offset(skip).limit(limit).all()
+    print(all_pulses_response)
+    return {"pulses": [{"id": i.id,
+                        "name": i.name,
+                        "created_at": i.created_at,
+                        "blocked": i.blocked
+                        } for i in all_pulses_response]}

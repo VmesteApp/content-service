@@ -1,4 +1,4 @@
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi import Request
 
 
@@ -9,4 +9,4 @@ class RoleChecker:
     def __call__(self, request: Request):
         if request.state.role in self.allowed_roles:
             return True
-        raise HTTPException(status_code=401, detail="Invalid role type")
+        raise HTMLResponse(status_code=401, content="Invalid role type")
