@@ -24,3 +24,12 @@ class DeletePulse(BaseModel):
 
 class ChangeStatus(BaseModel):
     blocked: bool
+
+
+class CreatePulseAdmin(BaseModel):
+    user_id: int
+    category: str
+    name: str
+    description: str
+    short_description: str
+    tags: str

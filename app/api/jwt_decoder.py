@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.config import Secret
+from app.config import SECRET
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -31,7 +31,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 token = token.split(" ")[1]
             request.state.role = self.decode_token(token)["role"]
             request.state.uid = self.decode_token(token)["uid"]
-            jwt.decode(token, Secret, algorithms=["HS256"])
+            jwt.decode(token, SECRET, algorithms=["HS256"])
             return await call_next(request)
 
         except jwt.ExpiredSignatureError:
@@ -47,7 +47,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=500, content={"detail": "Others errors"})
 
     def decode_token(self, token: str) -> bool:
-        payload = jwt.decode(token, Secret, algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
         return payload
 
     def is_exempt_path(self, path: str):
