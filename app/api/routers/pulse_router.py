@@ -6,9 +6,11 @@ from app.db.session import get_db
 from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
-from app.moderation.predict import predict
-# from app.config import MODERATION_ON
+from app.config import MODERATION_ON
 
+
+if MODERATION_ON:
+    from app.moderation.predict import predict
 
 router = APIRouter()
 
@@ -23,7 +25,7 @@ async def create_pulse(request: Request, new_pulse: CreatePulse, session: Sessio
         raise HTTPException(status_code=422, detail="Invalid category")
 
     all_text = ' '.join([new_pulse.name, new_pulse.description, new_pulse.short_description])
-    if predict(all_text):
+    if MODERATION_ON and predict(all_text):
         raise HTTPException(status_code=422, detail="Inappropriate")
 
     new_pulse_tags = list(new_pulse.tags.split(","))
@@ -58,7 +60,7 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
     all_text = ' '.join([update_pulse.name, update_pulse.description, update_pulse.short_description])
 
-    if predict(all_text):
+    if MODERATION_ON and predict(all_text):
         raise HTTPException(status_code=422, detail="Inappropriate")
 
     new_tags = update_pulse.tags.split(",")

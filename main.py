@@ -25,4 +25,4 @@ app.include_router(tag_router.router)
 app.include_router(upload_router.router)
 app.include_router(feed_router.router)
 app.include_router(complaints_router.router)
-app.debug = os.environ.get("DEBUG")
+app.debug = os.environ.get("DEBUG") == "True"
