@@ -1,4 +1,4 @@
-import torch
+from torch import no_grad
 from transformers import BertForSequenceClassification, BertTokenizer
 
 from app.config import MODEL_PATH
@@ -10,7 +10,7 @@ tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
 
 def predict(input_text):
     inputs = tokenizer(input_text, return_tensors="pt")
-    with torch.no_grad():
+    with no_grad():
         outputs = model(**inputs)
 
     logits = outputs.logits
