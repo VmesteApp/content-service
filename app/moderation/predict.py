@@ -1,19 +1,43 @@
-from torch import no_grad
-from transformers import BertForSequenceClassification, BertTokenizer
+import re
 
-from app.config import MODEL_PATH
+import numpy as np
+import onnxruntime as ort
+import demoji
+
+from app.moderation.tokenizer.WPTokenizer import WordPieceTokenizer
+from app.config import MODEL_PATH, VOCAB_PATH
 
 
-model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
-tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
+def clean_text(text):
+    url_pattern = re.compile(r'https?://\S+|www\.\S+')
+    text = url_pattern.sub("", text)
+    text = demoji.replace(text)
+    text = re.sub(r'[^a-zA-Zа-яА-Я0-9.,\-()!?: ]', '', text)
+    return text
 
 
-def predict(input_text):
-    inputs = tokenizer(input_text, return_tensors="pt")
-    with no_grad():
-        outputs = model(**inputs)
+onnx_path = MODEL_PATH
+vocab_path = VOCAB_PATH
+ort_session = ort.InferenceSession(onnx_path)
 
-    logits = outputs.logits
-    predicted_class = logits.argmax(dim=1).item()
+tokenizer = WordPieceTokenizer(vocab_path=vocab_path)
 
-    return predicted_class
+
+def onnx_predict(sample_text):
+    sample_text = clean_text(sample_text)
+    inputs = tokenizer.tokenize(sample_text, max_length=500, pad_to_max_length=True, truncation=True, return_tensors='np')
+    input_ids = inputs["input_ids"]
+    attention_mask = inputs["attention_mask"]
+    token_type_ids = inputs["token_type_ids"]
+    
+    ort_inputs = {
+        ort_session.get_inputs()[0].name: input_ids,
+        ort_session.get_inputs()[1].name: attention_mask,
+        ort_session.get_inputs()[2].name: token_type_ids
+        }
+    ort_outs = ort_session.run(None, ort_inputs)
+    
+    logits = ort_outs[0]
+    predicted_class_id = np.argmax(logits)
+    
+    return predicted_class_id

@@ -10,7 +10,7 @@ from app.config import MODERATION_ON
 
 
 if MODERATION_ON:
-    from app.moderation.predict import predict
+    from app.moderation.predict import onnx_predict
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ async def create_pulse(request: Request, new_pulse: CreatePulse, session: Sessio
         raise HTTPException(status_code=422, detail="Invalid category")
 
     all_text = ' '.join([new_pulse.name, new_pulse.description, new_pulse.short_description])
-    if MODERATION_ON and predict(all_text):
+    if MODERATION_ON and onnx_predict(all_text):
         raise HTTPException(status_code=422, detail="Inappropriate")
 
     new_pulse_tags = list(new_pulse.tags.split(","))
@@ -60,7 +60,7 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
     all_text = ' '.join([update_pulse.name, update_pulse.description, update_pulse.short_description])
 
-    if MODERATION_ON and predict(all_text):
+    if MODERATION_ON and onnx_predict(all_text):
         raise HTTPException(status_code=422, detail="Inappropriate")
 
     new_tags = update_pulse.tags.split(",")
@@ -69,7 +69,7 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
                                          "name": update_pulse.name,
                                          "description": update_pulse.description,
                                          "short_description": update_pulse.short_description}).where(pulse.c.id == update_pulse.id)
-    
+
     session.execute(pulse_update)
 
     session.execute(delete(pulse_tags).where(pulse_tags.c.pulse_id == update_pulse.id))
@@ -107,7 +107,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
 
     query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid,
                                      pulse.c.id.in_(project_members_subquery))))
-    
+
     res = session.execute(query).all()
 
     return {"pulses": [{"id": i.id,
