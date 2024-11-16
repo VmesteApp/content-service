@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 import numpy as np
 import onnxruntime as ort
@@ -6,6 +7,9 @@ import demoji
 
 from app.moderation.tokenizer.WPTokenizer import WordPieceTokenizer
 from app.config import MODEL_PATH, VOCAB_PATH
+
+
+current_file = Path(__file__)
 
 
 def clean_text(text):
@@ -16,8 +20,8 @@ def clean_text(text):
     return text
 
 
-onnx_path = MODEL_PATH
-vocab_path = VOCAB_PATH
+onnx_path = current_file.parent.parent.parent.parent / MODEL_PATH
+vocab_path = current_file.parent.parent.parent.parent / VOCAB_PATH
 ort_session = ort.InferenceSession(onnx_path)
 
 tokenizer = WordPieceTokenizer(vocab_path=vocab_path)
