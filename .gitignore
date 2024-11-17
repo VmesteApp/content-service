@@ -85,4 +85,3 @@ sonarqube/logs
 .terraform
 yoyo-local.ini
 uploaded_files/
-*.onnx
