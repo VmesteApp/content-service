@@ -9,11 +9,5 @@ def run(userID):
         stub = profile_pb2_grpc.ProfileServiceStub(channel)
 
         request = profile_pb2.GetVkIDRequest(userID=userID)
-
-        try:
-
-            response = stub.GetVkID(request)
-            print(f"Received VkID: {response.vkID}")
-        except grpc.RpcError as e:
-            print(f"gRPC error: {e.code()} - {e.details()}")
+        response = stub.GetVkID(request)
         return response.vkID
