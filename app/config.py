@@ -10,3 +10,4 @@ MODEL_PATH = os.environ.get("MODEL_PATH")
 VOCAB_PATH = os.environ.get("VOCAB_PATH")
 MODERATION_ON = os.environ.get("MODERATION_ON") == "True"
 vk_token = os.environ.get("vk_token")
+SERVER_NAME_GRPC = os.environ.get("SERVER_NAME_GRPC")

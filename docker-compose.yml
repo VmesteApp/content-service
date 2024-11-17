@@ -1,5 +1,6 @@
 networks:
   dev:
+    driver: bridge
 
 services:
   content:
@@ -12,7 +13,7 @@ services:
       - model:/content-service/app/moderation/model
     ports:
       - 8000:8000
-      - 44044:44044
+      - 44045:44044
     depends_on:
       - postgres
     networks:
