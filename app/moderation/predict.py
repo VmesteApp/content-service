@@ -20,8 +20,8 @@ def clean_text(text):
     return text
 
 
-onnx_path = current_file.parent.parent.parent.parent / MODEL_PATH
-vocab_path = current_file.parent.parent.parent.parent / VOCAB_PATH
+onnx_path = current_file.parent / MODEL_PATH
+vocab_path = current_file.parent / VOCAB_PATH
 ort_session = ort.InferenceSession(onnx_path)
 
 tokenizer = WordPieceTokenizer(vocab_path=vocab_path)
