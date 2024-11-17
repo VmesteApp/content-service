@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update
-from app.models.models import complaints, pulse
+from app.models.models import complaints, pulse, notification
 from app.schemas.complaint_schemas import CreateComplaint, VerdictComplaint
 from app.api.role_checker import RoleChecker
+from app.vk_session import vk
+from app.gRPC.client import run
 
 
 router = APIRouter()
@@ -34,16 +36,29 @@ def all_complaints(request: Request, session: Session = Depends(get_db), role_ch
 @router.put("/complaints/{complaintID}/verdict")
 async def update_complaint(request: Request, complaintID: int, verdict: VerdictComplaint, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
-
+    up_complaint = update(complaints)
     if verdict.verdict == "APPROVED":
-        pulse_id_from_complaints = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID).first()
-
-        vals_compl = update(complaints).values({"status": verdict.verdict}).where(complaints.c.id == complaintID)
-        vals_pulse = update(pulse).values({"blocked": True}).where(pulse_id_from_complaints.pulse_id == pulse.c.id)
-
-        session.execute(vals_compl)
-        session.execute(vals_pulse)
+        pulse_id = session.query(complaints.c.pulse_id).where(complaints.c.id == complaintID).scalar_subquery()
+        vals_compl = up_complaint.values({"status": verdict.verdict})
+        up_pulse_block = update(pulse)
+        session.execute(vals_compl.where(complaints.c.id == complaintID))
+        vals_pilse = up_pulse_block.values({"blocked": True})
+        session.execute(vals_pilse.where(pulse_id == pulse.c.id))
+        pulse_name = session.query(pulse.c.name).where(pulse.c.id == pulse_id).first()
+        uid = session.query(pulse.c.founder_id).where(pulse.c.id == pulse_id).first()[0]
+        vk_id = run(uid)
+        mes = f"Ваш импульс {pulse_name[0]} был заблокирован"
+        print(vk_id)
+        response = vk.notifications.sendMessage(
+        user_ids = [vk_id],
+        message = mes,
+        title='Новое уведомление',
+        button='Перейти в приложение'
+        )
+        session.execute(insert(notification).values({"user_id": uid,
+                                                 "text": mes}))
+        session.commit()
     else:
-        vals_compl = update(complaints).values({"status": verdict.verdict})
+        vals_compl = up_complaint.values({"status": verdict.verdict})
         session.execute(vals_compl.where(complaints.c.id == complaintID))
     session.commit()
