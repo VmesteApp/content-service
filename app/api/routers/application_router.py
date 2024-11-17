@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, select
-from app.models.models import application, pulse_members, pulse, images, pulse_tags, tag
+from app.models.models import application, pulse_members, pulse, images, pulse_tags, tag, notification
 from app.schemas.applications_schemas import SendApplication, Verdict
 from app.api.role_checker import RoleChecker
 from app.vk_session import vk
