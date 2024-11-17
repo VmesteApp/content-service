@@ -1,12 +1,16 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import JSONResponse
-from app.db.session import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select, or_, and_
-from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
-from app.schemas.pulse_schemas import CreatePulse, UpdatePulse, ChangeStatus
-from app.api.role_checker import RoleChecker
 
+from app.db.session import get_db
+from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
+from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
+from app.api.role_checker import RoleChecker
+from app.config import MODERATION_ON
+
+
+if MODERATION_ON:
+    from app.moderation.predict import onnx_predict
 
 router = APIRouter()
 
@@ -14,10 +18,15 @@ ALLOWED_CATEGORIES = ["project", "event"]
 
 
 @router.post("/pulse")
-async def create_pulse(request: Request, new_pulse: CreatePulse, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+async def create_pulse(request: Request, new_pulse: CreatePulse, session: Session = Depends(get_db),
+                       role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if new_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
+
+    all_text = ' '.join([new_pulse.name, new_pulse.description, new_pulse.short_description])
+    if MODERATION_ON and onnx_predict(all_text):
+        raise HTTPException(status_code=422, detail="Inappropriate")
 
     new_pulse_tags = list(new_pulse.tags.split(","))
     for i in new_pulse_tags:
@@ -43,18 +52,24 @@ async def create_pulse(request: Request, new_pulse: CreatePulse, session: Sessio
 
 
 @router.put("/pulse")
-async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Session = Depends(get_db),
+                       role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if update_pulse.category not in ALLOWED_CATEGORIES:
         raise HTTPException(status_code=422, detail="Invalid category")
-    
+
+    all_text = ' '.join([update_pulse.name, update_pulse.description, update_pulse.short_description])
+
+    if MODERATION_ON and onnx_predict(all_text):
+        raise HTTPException(status_code=422, detail="Inappropriate")
+
     new_tags = update_pulse.tags.split(",")
 
     pulse_update = update(pulse).values({"category": update_pulse.category,
                                          "name": update_pulse.name,
                                          "description": update_pulse.description,
                                          "short_description": update_pulse.short_description}).where(pulse.c.id == update_pulse.id)
-    
+
     session.execute(pulse_update)
 
     session.execute(delete(pulse_tags).where(pulse_tags.c.pulse_id == update_pulse.id))
@@ -65,11 +80,15 @@ async def update_pulse(request: Request, update_pulse: UpdatePulse, session: Ses
 
 
 @router.delete("/pulse/{delete_pulse}")
-def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends(get_db),
+                 role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
 
-    founder = session.query(pulse.c.founder_id).where(pulse.c.id == delete_pulse).first()[0]
-    if founder == request.state.uid:
+    one_pulse = session.query(pulse.c.founder_id).where(pulse.c.id == delete_pulse).first()
+    if one_pulse is None:
+        raise HTTPException(status_code=404, detail="There are no pulse with this id")
+
+    if one_pulse.founder_id == request.state.uid:
         session.execute(delete(pulse).where(delete_pulse == pulse.c.id))
         session.execute(delete(pulse_tags).where(delete_pulse == pulse_tags.c.pulse_id))
         session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
@@ -77,7 +96,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
         session.execute(delete(images).where(delete_pulse == images.c.pulse_id))
         session.commit()
     else:
-        return JSONResponse(status_code=403, content="Insufficient rights to delete the pulse")
+        raise HTTPException(status_code=403, detail="Insufficient rights to delete the pulse")
 
 
 @router.get("/pulses/my/")
@@ -88,7 +107,7 @@ def all_pulses(request: Request, session: Session = Depends(get_db)):
 
     query = (select(pulse).where(or_(pulse.c.founder_id == request.state.uid,
                                      pulse.c.id.in_(project_members_subquery))))
-    
+
     res = session.execute(query).all()
 
     return {"pulses": [{"id": i.id,
@@ -110,7 +129,7 @@ def find_pulse(request: Request, pulse_id: int, session: Session = Depends(get_d
     members = session.query(pulse_members.c.user_id).where(pulse_members.c.pulse_id == pulse_id).all()
     membr = [i[0] for i in members]
     if request.state.uid not in membr and request.state.uid != result.founder_id:
-        return JSONResponse(status_code=403, content={"message": "There are not enough rights"})
+        raise HTTPException(status_code=403, detail={"message": "There are not enough rights"})
     images_query = session.query(images.c.image_path).where(images.c.pulse_id == pulse_id).all()
     tags = (session.query(pulse_tags.c.pulse_id, tag.c.id, tag.c.name)
             .join(tag, tag.c.id == pulse_tags.c.tag_id).
@@ -152,7 +171,9 @@ def find_pulse_preview(pulse_id: int, session: Session = Depends(get_db)):
 
 
 @router.delete("/pulses/{pulseID}/members/{userID}")
-def delete_user(pulseID : int, userID : int, request: Request, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+def delete_user(request: Request, pulseID : int, userID : int, session: Session = Depends(get_db),
+                role_checker=RoleChecker(allowed_roles=["user"])):
+    role_checker(request)
     founder = session.query(pulse.c.founder_id).where(pulse.c.id == pulseID).first()
     if founder == None:
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
@@ -160,24 +181,4 @@ def delete_user(pulseID : int, userID : int, request: Request, session: Session 
         session.execute(delete(pulse_members).where(and_(pulse_members.c.pulse_id == pulseID, pulse_members.c.user_id == userID)))
         session.commit()
     else:
-        return JSONResponse(status_code=403, content="There are not enough rights to delete the user from this pulse")
-
-
-@router.put("/admin/pulse/{pulseID}/moderation")
-def change_status(pulseID : int, request: Request, new_status: ChangeStatus, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
-    role_checker(request)
-    session.execute(update(pulse).values({"blocked": new_status.blocked}).where(pulse.c.id == pulseID))
-    session.commit()
-
-
-@router.get("/admin/pulses")
-def all_pulses_admin(request: Request, skip: int, limit: int, session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
-    role_checker(request)
-
-    all_pulses_response = session.query(pulse).offset(skip).limit(limit).all()
-    print(all_pulses_response)
-    return {"pulses": [{"id": i.id,
-                        "name": i.name,
-                        "created_at": i.created_at,
-                        "blocked": i.blocked
-                        } for i in all_pulses_response]}
+        raise HTTPException(status_code=403, detail="There are not enough rights to delete the user from this pulse")

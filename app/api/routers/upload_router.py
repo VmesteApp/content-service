@@ -51,7 +51,8 @@ async def get_images(image_uuid: UUID, session: Session = Depends(get_db)):
 
 
 @router.post("/pulse/{id}/image")
-async def upload_image(request: Request, id: int, files: List[UploadFile] = File(...), session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
+async def upload_image(request: Request, id: int, files: List[UploadFile] = File(...),
+                       session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["user"])):
     role_checker(request)
     if check_pulse_id(id, session):
         raise HTTPException(status_code=404, detail="There is no pulse with this id")
@@ -73,7 +74,10 @@ async def upload_image(request: Request, id: int, files: List[UploadFile] = File
             content = await file.read()
             buffer.write(content)
 
-        val = insert(images).values({"image_id": unique_id, "pulse_id": id, "full_name": unique_id_full, "image_path": f"https://vmesteapp.ru/content/image/{unique_id}"})
+        val = insert(images).values({"image_id": unique_id,
+                                     "pulse_id": id,
+                                     "full_name": unique_id_full,
+                                     "image_path": f"https://vmesteapp.ru/content/image/{unique_id}"})
         session.execute(val)
         session.commit()
     raise HTTPException(status_code=200, detail="OK")
