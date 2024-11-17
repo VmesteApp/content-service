@@ -81,3 +81,12 @@ complaints = Table(
     Column("created_at", DateTime, default=func.now()),
     Column("updated_at", DateTime, default=func.now(), onupdate=func.now())
 )
+
+notification = Table(
+    "notification",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", Integer),
+    Column("text", String)
+)
+
