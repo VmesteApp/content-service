@@ -1,6 +1,7 @@
 networks:
   dev:
     external: true
+  pg_content:
 
 services:
   content:
@@ -30,6 +31,8 @@ services:
       POSTGRES_USER: 'user'
       POSTGRES_PASSWORD: 'pass'
       POSTGRES_DB: 'postgres'
+    networks:
+      - pg_content
     ports:
       - 5433:5432
 
