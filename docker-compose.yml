@@ -19,6 +19,7 @@ services:
       - postgres
     networks:
       - dev
+      - pg_content
     env_file:
       - .env
 
