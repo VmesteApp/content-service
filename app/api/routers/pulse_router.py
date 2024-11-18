@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import insert, update, delete, select, or_, and_
 
 from app.db.session import get_db
-from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application
+from app.models.models import pulse, pulse_tags, tag, pulse_members, images, application, complaints
 from app.schemas.pulse_schemas import CreatePulse, UpdatePulse
 from app.api.role_checker import RoleChecker
 from app.config import MODERATION_ON
@@ -94,6 +94,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
         session.execute(delete(pulse_members).where(delete_pulse == pulse_members.c.pulse_id))
         session.execute(delete(application).where(delete_pulse == application.c.pulse_id))
         session.execute(delete(images).where(delete_pulse == images.c.pulse_id))
+        session.execute(delete(complaints).where(delete_pulse == complaints.c.pulse_id))
         session.commit()
     else:
         raise HTTPException(status_code=403, detail="Insufficient rights to delete the pulse")
