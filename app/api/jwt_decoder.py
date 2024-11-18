@@ -40,8 +40,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         except jwt.InvalidTokenError:
             return JSONResponse(status_code=401, content={"detail": "Invalid token"})
 
-        except AttributeError and TypeError:
-            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        # except AttributeError and TypeError:
+        #     return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
 
         # except Exception:
         #     return JSONResponse(status_code=500, content={"detail": "Others errors"})
