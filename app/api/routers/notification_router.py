@@ -13,4 +13,5 @@ def all_notifications(request: Request, session: Session = Depends(get_db), role
     return {"notifications": [{"id": i.id,
                     "user_id" : i.user_id,
                     "text": i.text,
+                    "created_at": i.created_at,
                     } for i in all_notif]}
