@@ -183,3 +183,11 @@ def delete_user(request: Request, pulseID : int, userID : int, session: Session 
         session.commit()
     else:
         raise HTTPException(status_code=403, detail="There are not enough rights to delete the user from this pulse")
+
+
+@router.delete("/pulses/{pulseID}/leave")
+def quit_user(request: Request, pulseID : int, session: Session = Depends(get_db),
+                role_checker=RoleChecker(allowed_roles=["user"])):
+    role_checker(request)
+    session.execute(delete(pulse_members).where(and_(pulse_members.c.pulse_id == pulseID, pulse_members.c.user_id == request.state.uid)))
+    session.commit()
