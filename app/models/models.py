@@ -87,6 +87,7 @@ notification = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("user_id", Integer),
-    Column("text", String)
+    Column("text", String),
+    Column("created_at", DateTime, default=func.now())
 )
 
