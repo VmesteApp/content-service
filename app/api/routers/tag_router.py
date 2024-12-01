@@ -37,6 +37,8 @@ async def delete_tag(request: Request, del_tag: DeleteTag, session: Session = De
 
 
 @router.get("/tags")
-async def all_tags(session: Session = Depends(get_db)):
-    tags = session.query((tag)).all()
-    return {"tags": [{"id": i.id, "name": i.name} for i in tags]}
+async def all_tags(skip: Optional[int] = 0, limit: Optional[int] = 100, session: Session = Depends(get_db)):
+    all_tags = session.query((tag)).all()
+    tags = session.query((tag)).offset(skip).limit(limit).all()
+    return {"remained": len(all_tags) - len(tags) - skip,
+            "tags": [{"id": i.id, "name": i.name} for i in tags]}
