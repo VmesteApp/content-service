@@ -23,10 +23,13 @@ def create_complaint(request: Request, pulseID: int, new_complaint: CreateCompla
 
 
 @router.get("/complaints")
-def all_complaints(request: Request, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
-    role_checker(request)          
-    all_complaints = session.query(complaints).all()
-    return {"complaints": [{"id": i.id,
+def all_complaints(request: Request, skip: Optional[int] = 0, limit: Optional[int] = 100, session: Session = Depends(get_db), role_checker = RoleChecker(allowed_roles=["admin", "superadmin"])):
+    role_checker(request)      
+    all_comp = session.query(complaints).all()    
+    all_complaints = session.query(complaints).offset(skip).limit(limit).all()
+    return {"remained": len(all_comp) - len(all_complaints) - skip,
+            "complaints": 
+                        [{"id": i.id,
                         "pulse_id" : i.pulse_id,
                         "message": i.message,
                         "status": i.status
