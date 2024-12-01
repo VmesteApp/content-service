@@ -28,10 +28,11 @@ def change_status(pulseID : int, request: Request, new_status: ChangeStatus,
 def all_pulses_admin(request: Request, skip: Optional[int] = 0, limit: Optional[int] = 100,
                      session: Session = Depends(get_db), role_checker=RoleChecker(allowed_roles=["admin", "superadmin"])):
     role_checker(request)
-
+    all_pulses = session.query(pulse).all()
     all_pulses_response = session.query(pulse).offset(skip).limit(limit).all()
 
-    return {"pulses": [{"id": i.id,
+    return {"remained": len(all_pulses) - len(all_pulses_response) - skip,
+            "pulses": [{"id": i.id,
                         "name": i.name,
                         "created_at": i.created_at,
                         "blocked": i.blocked
