@@ -1,5 +1,5 @@
-from src.domain.dto.pulse_dto.create_pulse import CreatePulseInputDto, CreatePulseOutputDto
-from src.domain.entities.pulse import Pulse
+from src.domain.dto.application_dto.create_application import CreateApplicationInputDto, CreateApplicationOutputDto
+from src.domain.entities.application import Application
 from src.domain.interfaces.application_repository import ApplicationRepository
 
 
@@ -7,22 +7,17 @@ class CreateApplication:
     def __init__(self, repository: ApplicationRepository) -> None:
         self.repository = repository
     
-    def execute(self, dto: CreatePulseInputDto) -> CreatePulseOutputDto:
-        pulse = Pulse(
+    def execute(self, dto: CreateApplicationInputDto) -> CreateApplicationOutputDto:
+        application = Application(
             id=None,
-            category=dto.category,
-            name=dto.name,
-            founder_id=dto.founder_id,
-            description=dto.description,
-            short_description=dto.short_description,
-            tags=dto.tags,
-            images=None,
-            members=None,
-            blocked=False
+            pulse_id=dto.pulse_id,
+            candidate_id=dto.candidate_id,
+            message=dto.message,
+            status=None,
         )
         try:
-            pulse_data_out = self.repository.create_pulse(pulse)
+            application_data_out = self.repository.create_application(application)
         except Exception as error:
-            return CreatePulseOutputDto(id=None, is_success=False, error_message=str(error))
+            return CreateApplicationOutputDto(id=None, is_success=False, error_message=str(error))
         else:
-            return CreatePulseOutputDto(id=pulse_data_out, is_success=True, error_message="")
+            return CreateApplicationOutputDto(id=application_data_out, is_success=True, error_message="")

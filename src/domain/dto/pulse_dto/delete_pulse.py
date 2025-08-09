@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class DeletePulseInputDto:
-    id: int
+    pulse_id: int
 
 
 @dataclass

@@ -25,6 +25,7 @@ class DataBaseApplicationRepository(ApplicationRepository):
                                                        })
         self.session.execute(post_application)
         self.session.commit()
+        #TODO: return {"id":}
 
     def update_application(self, id: int, application: Application):
         pulse_candidate = self.session.query(applications_table.pulse_id, applications_table.candidate_id).where(applications_table.id == id).first()

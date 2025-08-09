@@ -40,7 +40,7 @@ async def create_pulse(request: Request, data: CreatePulseSchemas, session: Sess
     use_case = CreatePulse(repository)
     output_dto: CreatePulseOutputDto = use_case.execute(input_dto)
 
-    response = PulseAdapter.create_pulse_output_dto_to_responce(output_dto)
+    response = PulseAdapter.create_pulse_output_dto_to_response(output_dto)
 
     return response
 
@@ -57,7 +57,7 @@ async def update_pulse(request: Request, data: UpdatePulseSchemas, session: Sess
     use_case = UpdatePulse(repository)
     output_dto: UpdatePulseOutputDto = use_case.execute(input_dto)
 
-    response = PulseAdapter.update_pulse_output_dto_to_responce(output_dto)
+    response = PulseAdapter.update_pulse_output_dto_to_response(output_dto)
 
     return response
 
@@ -74,7 +74,7 @@ def delete_pulse(request: Request, delete_pulse: int, session: Session = Depends
     use_case = DeletePulse(repository)
     output_dto: DeletePulseOutputDto = use_case.execute(input_dto)
 
-    response = PulseAdapter.delete_pulse_output_dto_to_responce(output_dto)
+    response = PulseAdapter.delete_pulse_output_dto_to_response(output_dto)
 
     return response
 
@@ -88,7 +88,7 @@ def all_pulses(request: Request, session: Session = Depends(create_session)):
     use_case = GetPulses(repository)
     output_dto: List[GetPulseOutputDto] = use_case.execute(input_dto)
 
-    response = PulseAdapter.get_pulses_output_dto_to_responce(output_dto)
+    response = PulseAdapter.get_pulses_output_dto_to_response(output_dto)
 
     return response
 
@@ -101,7 +101,7 @@ def find_pulse(pulse_id: int, session: Session = Depends(create_session)):
 
     use_case = GetPulse(repository)
     output_dto: GetPulseOutputDto = use_case.execute(input_dto)
-    print(output_dto)
+
     response = PulseAdapter.get_pulse_output_dto_to_responce(output_dto)
 
     return response

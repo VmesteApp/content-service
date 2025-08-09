@@ -4,13 +4,14 @@ from src.domain.entities.pulse import Pulse
 
 
 @dataclass
-class GetPulseApplicationInputDto:
+class GetPulseApplicationsInputDto:
     pulse_id: int
 
 
 @dataclass
-class GetPulseApplicationOutputDto:
-    id: int
-    pulse: Pulse
+class GetPulseApplicationsOutputDto:
+    pulse_id: int
+    candidate_id: int
+    application_id: int
     message: str
     status: str

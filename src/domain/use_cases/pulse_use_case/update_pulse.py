@@ -18,7 +18,7 @@ class UpdatePulse:
             tags=dto.tags,
             images=None,
             members=None,
-            blocked=False
+            blocked=False,
         )
         try:
             self.repository.update_pulse(pulse)

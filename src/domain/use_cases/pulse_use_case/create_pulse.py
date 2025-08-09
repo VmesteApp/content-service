@@ -18,7 +18,7 @@ class CreatePulse:
             tags=dto.tags,
             images=None,
             members=None,
-            blocked=False
+            blocked=False,
         )
         try:
             pulse_data_out = self.repository.create_pulse(pulse)

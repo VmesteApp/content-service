@@ -25,7 +25,7 @@ class GetPulses:
                 blocked=pulse.blocked,
                 images=pulse.images,
                 members=None,
-                tags=None
+                tags=None,
             ) for pulse in pulses]
 
             return output_dto

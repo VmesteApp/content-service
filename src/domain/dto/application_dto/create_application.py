@@ -2,16 +2,14 @@ from dataclasses import dataclass
 
 
 @dataclass
-class CreatePulseInputDto:
-    category: str
-    name: str
-    founder_id: int
-    description: str
-    short_description: str
-    tags: str
+class CreateApplicationInputDto:
+    pulse_id: int
+    candidate_id: int
+    message: str
+
 
 @dataclass
-class CreatePulseOutputDto:
+class CreateApplicationOutputDto:
     id: int
     is_success: bool
     error_message: str
