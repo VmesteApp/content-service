@@ -1,14 +1,18 @@
 from pydantic import BaseModel
 
 
-class CreateTag(BaseModel):
+class CreateTagSchema(BaseModel):
     name: str
 
 
-class UpdateTag(BaseModel):
+class UpdateTagSchema(BaseModel):
     id: int
     name: str
 
 
-class DeleteTag(BaseModel):
+class TagResponseSchema(BaseModel):
     id: int
+    name: str
+
+    class Config:
+        from_attributes = True
