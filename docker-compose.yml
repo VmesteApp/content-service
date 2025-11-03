@@ -1,7 +1,5 @@
 networks:
   dev:
-    external: true
-  pg_content:
 
 services:
   content:
@@ -11,33 +9,29 @@ services:
     container_name: content-service-vmeste
     volumes:
       - uploaded_files:/content-service/uploaded_files
-      - model:/content-service/app/moderation/model
     ports:
-      - 8000:8000
-      - 44045:44044
+      - "8000:8000"
     depends_on:
       - postgres
     networks:
       - dev
-      - pg_content
     env_file:
       - .env
 
   postgres:
     container_name: postgres_content
-    image: postgres
+    image: postgres:16
     volumes:
       - pg-data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: 'user'
       POSTGRES_PASSWORD: 'pass'
       POSTGRES_DB: 'postgres'
-    networks:
-      - pg_content
     ports:
       - 5433:5432
+    networks:
+      - dev
 
 volumes:
   pg-data:
   uploaded_files:
-  model:

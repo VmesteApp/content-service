@@ -1,13 +1,20 @@
 import os
-
 from fastapi import FastAPI
-from app.api.routers import tag_router, pulse_router, application_router, upload_router, feed_router, complaints_router, notification_router
-from app.api.jwt_decoder import AuthenticationMiddleware
+from services.api.routers import pulse_router
+# from services.api.routers import application_router
+from services.api.routers import feed_router
+# from services.api.routers import complaint_router
+from services.api.routers import admin_router
+from services.api.routers import image_router
+# from services.api.routers import notification_router
+from services.api.routers import tag_router
+
+from services.api.jwt_decoder import AuthenticationMiddleware
+from services.data.db_session.session import global_init
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import tag_router, pulse_router, application_router, upload_router, feed_router, complaints_router, admin_pulse_router
-from app.api.jwt_decoder import AuthenticationMiddleware
 
+global_init()
 
 app = FastAPI(root_path="/content")
 
@@ -19,13 +26,13 @@ app.add_middleware(
     allow_headers=["*"]
     )
 
-
-app.include_router(application_router.router)
 app.include_router(pulse_router.router)
-app.include_router(admin_pulse_router.router)
-app.include_router(tag_router.router)
-app.include_router(upload_router.router)
+# app.include_router(application_router.router)
+app.include_router(admin_router.router)
 app.include_router(feed_router.router)
-app.include_router(complaints_router.router)
-app.include_router(notification_router.router)
-app.debug = os.environ.get("DEBUG") == "True"
+# app.include_router(complaint_router.router)
+# app.include_router(notification_router.router)
+app.include_router(image_router.router)
+app.include_router(tag_router.router)
+
+app.debug = os.environ.get("DEBUG")

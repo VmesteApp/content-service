@@ -1,65 +1,56 @@
-# Content Service
+# Сервис Vmeste
 
-### Развертывание и запуск проекта
+Проект состоит из нескольких репозиториев:
+```
+Vmeste
+├── auth-service                                             # сервис авторизации
+├── content-service                                          # сервис контента
+├── vk-client                                                # frontend часть vk-клиента
+├── admin-frontend                                           # frontend часть админки
+├── protobuf                                                 # контранкы gRPC
+├── inappropriate-content-detector-model                     # модель для модерации
+├── nginx                                                    # конфиги nginx
 
-- Прежде всего надо:
+```
 
-1. Удостовериться, что установлена утилита `make`.
-2. Удостовериться, что установлен `docker`.
-3. Запустить `make bin-deps`.
+Приложение состоит из двух микросервисов auth-service и content-service соответственно.
+В каждом из микросервисов реализована чистая архитектура.
 
-- Запуск приложения, для продакшена:
-#### <command>
-    make compose-up-prod
-#### </command>
+Content-service написан на python, поэтому интерфейсы реализованы через ABC (Abstract Base Classes)
 
-- Остановка контейнеров:
+## Структура content-service:
+```
+content-service/
+├── migrations/
+├── services/
+│ ├── api/                      # API слой приложения
+│ │ ├── routers/                    # Роутеры FastAPI
+│ │ └── schemas/                    # Cхемы для роутеров FastAPI
+│ ├── data/                     # Работа с данными
+│ │ ├── external/                 # Интеграция с VK API
+│ │ ├── models/                   # Модели данных для БД
+│ │ └── repositories/             # Паттерн Repository для доступа к данным
+│ └── gRPC/                     # Конфигурации gRPC
+└── src/
+│ ├── adapters/                 # Адаптеры для внешних систем (общаются посредством dto)
+│ ├── domain/                   # Доменный слой и бизнес-логика
+│ │ ├── dto/                      # Data Transfer Objects (DTO)
+│ │ ├── entities/                 # Сущности предметной области (как этого требует clean architecture)
+│ │ ├── interfaces/               # Интерфейсы через ABC
+│ │ └── use_cases/                # Сценарии использования (слой Use Case-ов)
+```
 
-#### <command>
-    make compose-down
-#### </command>
+В рамках чистой и луковой архитектуры разрешено обращаться "через слой", не злоупотребляя этим, главное принцип зависимостей и он здесь везде выполняется.
+Поэтому роутеры FastAPI могут свободно обращаться, например к сущностям (entities), если это понадобится. Но, при этом, конечно же из Domain Layer в слой Usecase-ов и выше нельзя, так как тогда нарушится принцип внедрения зависимостей (Dependency Injection).
 
-### Workflow
+Схематично это можно представить так:
 
-- Получить информацию по командам:
-#### <command>
-    make help
-#### </command>
+![Схема](pictures/clean-architec.jpg)
 
+Для проекта проводилось также нагрузочное тестирование посредством Locust.
+Приложение успешно справлялось с нагрузкой 100 RPS.
+[Ознакомиться с отчетом тестирования можно открыв этот файл](pictures/load_test.html)
+[Ознакомиться с презентацией проекта можно здесь](pictures/VKFC'24_Vmeste_.pptx)
 
-- Посмотреть ошибки по PEP8:
-#### <command>
-    make linter-check
-#### </command>
-линтер укажет на все ошибки стандарта PEP8
-
-- Просмотр содержимого БД:
-
-1. Находим Container ID у образа image:
-#### <command>
-    docker ps
-#### </command>
-
-2. Вставляем нужный Container ID.
-#### <command>
-    docker exec -it <container_id> bash
-#### </command>
-
-3. Открывает консоль Postgres.
-#### <command>
-    psql -p 5432 user -d postgres
-#### </command>
-
-4. Чтобы выйти из контейнера.
-#### <command>
-    exit
-#### </command>
-
-- Работа с миграция:
-
-- Удалить содержимое БД:
-#### <command>
-    make docker-rm-volume
-#### </command>
-
-- Unit тесты
+В какой-то момент количество зарегистрированных пользователей достигло двух тысяч:
+![Пользователи](pictures/users.jpg)
