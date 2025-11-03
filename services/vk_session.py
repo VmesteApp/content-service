@@ -1,5 +1,5 @@
 import vk_api
-from config import vk_token
+from services.config import vk_token
 
 vk_session = vk_api.VkApi(token=vk_token)
 vk = vk_session.get_api()

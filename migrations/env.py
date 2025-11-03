@@ -3,25 +3,21 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
+from alembic import context
+from services.data.db_session.session import SqlAlchemyBase
 from services.data.config import DB_URL
 
-from alembic import context
-
-from services.data.db_session.session import SqlAlchemyBase, global_init
-
-
-global_init()
 
 config = context.config
-
-section = config.config_ini_section
-
-config.set_section_option(section, "DB_URL", DB_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+section = config.config_ini_section
+config.set_section_option(section, "DB_URL", DB_URL)
+
 target_metadata = SqlAlchemyBase.metadata
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -54,6 +50,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    print("DB_URL =", repr(DB_URL))
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

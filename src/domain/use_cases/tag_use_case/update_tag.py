@@ -18,6 +18,6 @@ class UpdateTag:
             )
         except Exception as error:
             return UpdateTagOutputDto(
-                is_success=False, 
+                is_success=False,
                 error_message=str(error)
             )
